@@ -1,25 +1,27 @@
 import Link from "next/link";
 import type { ComponentProps, ReactNode } from "react";
 
-type Variant = "primary" | "dark" | "light" | "outline" | "outline-light" | "ghost";
+type Variant = "primary" | "dark" | "light" | "outline" | "outline-light" | "ghost" | "link" | "link-light";
 type Size = "md" | "lg" | "sm";
 
 const base =
-  "group/btn relative inline-flex items-center justify-center gap-2.5 rounded-full font-semibold whitespace-nowrap transition-[background-color,color,box-shadow,transform] duration-300 ease-[var(--ease-out-expo)] disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98]";
+  "group/btn relative inline-flex items-center justify-center gap-2.5 rounded-full font-semibold tracking-[-0.01em] whitespace-nowrap transition-[background-color,color,box-shadow,transform,border-color] duration-300 ease-[var(--ease-out-expo)] disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98]";
 
 const variants: Record<Variant, string> = {
-  primary: "bg-lime text-ink hover:bg-lime-hover shadow-[0_8px_24px_-8px_rgb(183_243_75/0.7)]",
+  primary: "bg-lime text-ink hover:bg-lime-hover shadow-[inset_0_1px_0_rgb(255_255_255/0.5),0_10px_30px_-12px_rgb(183_243_75/0.8)]",
   dark: "bg-ink text-paper hover:bg-ink-3",
   light: "bg-paper text-ink hover:bg-white",
-  outline: "border border-ink/20 text-ink hover:border-ink hover:bg-ink hover:text-paper",
-  "outline-light": "border border-paper/30 text-paper hover:border-paper hover:bg-paper hover:text-ink backdrop-blur-sm",
+  outline: "border border-ink/15 text-ink hover:border-ink hover:bg-ink hover:text-paper",
+  "outline-light": "border border-paper/25 text-paper hover:border-paper hover:bg-paper hover:text-ink",
   ghost: "text-ink hover:bg-ink/5",
+  link: "!h-auto !px-0 text-ink underline decoration-ink/20 underline-offset-[6px] hover:decoration-ink",
+  "link-light": "!h-auto !px-0 text-paper underline decoration-paper/25 underline-offset-[6px] hover:decoration-paper",
 };
 
 const sizes: Record<Size, string> = {
-  sm: "h-9 px-4 text-sm",
-  md: "h-12 px-6 text-[15px]",
-  lg: "h-14 px-8 text-base",
+  sm: "h-10 px-4 text-sm",
+  md: "h-[52px] px-6 text-[15px]",
+  lg: "h-[60px] px-8 text-base",
 };
 
 export function buttonClass(variant: Variant = "primary", size: Size = "md", extra = "") {

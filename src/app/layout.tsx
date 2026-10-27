@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Archivo, Hanken_Grotesk, JetBrains_Mono } from "next/font/google";
+import { Sora, Hanken_Grotesk, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { brand } from "@/config/brand";
 import { site } from "@/config/site";
@@ -9,7 +9,7 @@ import { PreviewBanner } from "@/components/layout/PreviewBanner";
 import { Providers } from "@/components/Providers";
 import { CompareBar } from "@/components/shop/CompareBar";
 
-const archivo = Archivo({ subsets: ["latin"], axes: ["wdth"], variable: "--font-archivo", display: "swap" });
+const sora = Sora({ subsets: ["latin"], variable: "--font-sora", display: "swap" });
 const hanken = Hanken_Grotesk({ subsets: ["latin"], variable: "--font-hanken", display: "swap" });
 const jetbrains = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jetbrains", display: "swap", weight: ["400", "500"] });
 
@@ -34,7 +34,7 @@ const motionScript = `(function(){try{if(!window.matchMedia('(prefers-reduced-mo
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="de" className={`${archivo.variable} ${hanken.variable} ${jetbrains.variable}`} suppressHydrationWarning>
+    <html lang="de" className={`${sora.variable} ${hanken.variable} ${jetbrains.variable}`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: motionScript }} />
       </head>
