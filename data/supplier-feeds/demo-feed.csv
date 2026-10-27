@@ -1,0 +1,8 @@
+Artikelnummer;EAN;Bezeichnung;Hersteller;Kategorie;Einkaufspreis netto;UVP brutto;MwSt;Bestand;Anzahl Module;Modulleistung;Wechselrichterleistung;Speicherkapazität;Beschreibung
+DF-BKW-880;;Demo-Feed Balkonkraftwerk 880 Wp;Demo-Feed;Balkonkraftwerk;245,00;329,00;0;42;2;440 Wp;800 W;;Beispieldatensatz zum Testen des Imports. Kein echtes Angebot.
+DF-BKW-1760;;Demo-Feed Balkonkraftwerk 1.760 Wp;Demo-Feed;Balkonkraftwerk;489,50;649,00;0;3;4;440 Wp;800 W;;Beispieldatensatz mit knappem Bestand.
+DF-BKWS-880-16;;Demo-Feed Set 880 Wp mit 1,6 kWh Speicher;Demo-Feed;Balkonkraftwerk mit Speicher;890,00;1.199,00;0;auf Lager;2;440 Wp;800 W;1600 Wh;Beispieldatensatz: Speicher in Wh angegeben, wird in kWh umgerechnet.
+DF-SPE-27;;Demo-Feed Speicher 2,7 kWh;Demo-Feed;Speicher;1.020,00;1.349,00;0 %;nicht verfügbar;;;;2,7 kWh;Beispieldatensatz ohne Bestand.
+DF-WR-800;;Demo-Feed Mikrowechselrichter 800 W;Demo-Feed;Wechselrichter;98,00;;0;120;;;0,8 kW;;Beispieldatensatz ohne UVP.
+DF-ZUB-METER;;Demo-Feed Smart Meter;Demo-Feed;Zubehör;61,00;99,00;19;15;;;;;Beispieldatensatz mit 19 % MwSt.
+DF-FEHLER-1;;Demo-Feed Datensatz ohne Preis;Demo-Feed;Zubehör;;;0;5;;;;;Absichtlich fehlerhaft: kein Preis.

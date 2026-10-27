@@ -1,0 +1,236 @@
+@import "tailwindcss";
+
+/*
+  SCHMITZ SOLAR – Design-Tokens
+  Konzept: helle, ruhige Flächen in warmem Weiß; Anthrazit für Text und
+  dunkle "Wow"-Abschnitte; Premium-Grün nur für Handlungen und Energie;
+  warmes Sonnenlicht als Stimmung in Hero und Storytelling.
+*/
+@theme {
+  --color-ink: #101820;
+  --color-ink-2: #17222c;
+  --color-ink-3: #22303b;
+  --color-ink-line: #2b3a46;
+  --color-lime: #b7f34b;
+  --color-lime-hover: #c9f871;
+  --color-lime-deep: #3e6a00;
+  --color-paper: #f8faf7;
+  --color-mist: #e9eef0;
+  --color-line: #d8dfe2;
+  --color-muted: #5b6670;
+  --color-muted-dark: #9aa7b1;
+  --color-sun: #ffb547;
+  --color-sun-soft: #ffe3b8;
+  --color-danger: #b4380c;
+  --color-white: #ffffff;
+
+  --font-display: var(--font-archivo), "Helvetica Neue", Arial, sans-serif;
+  --font-sans: var(--font-hanken), "Segoe UI", system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, "SFMono-Regular", Menlo, monospace;
+
+  --radius-card: 20px;
+  --shadow-soft: 0 1px 2px rgb(16 24 32 / 0.04), 0 12px 32px -12px rgb(16 24 32 / 0.12);
+  --shadow-lift: 0 2px 4px rgb(16 24 32 / 0.05), 0 28px 60px -20px rgb(16 24 32 / 0.28);
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out-soft: cubic-bezier(0.65, 0, 0.35, 1);
+
+  --animate-page-in: page-in 0.6s var(--ease-out-expo) both;
+}
+
+@keyframes page-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
+
+@layer base {
+  html {
+    background: var(--color-paper);
+    color: var(--color-ink);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    font-family: var(--font-sans);
+    font-size: 16px;
+    line-height: 1.6;
+    background: var(--color-paper);
+    color: var(--color-ink);
+  }
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    text-wrap: balance;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+  }
+  ::selection { background: var(--color-lime); color: var(--color-ink); }
+  :focus-visible {
+    outline: 3px solid var(--color-lime-deep);
+    outline-offset: 3px;
+    border-radius: 6px;
+  }
+  .on-dark :focus-visible { outline-color: var(--color-lime); }
+  img, svg, video { max-width: 100%; }
+}
+
+@layer components {
+  /* Seitenbreite mit Safe-Area-Rändern */
+  .container-x {
+    width: 100%;
+    max-width: 1320px;
+    margin-inline: auto;
+    padding-left: max(20px, env(safe-area-inset-left, 0px));
+    padding-right: max(20px, env(safe-area-inset-right, 0px));
+  }
+  @media (min-width: 768px) {
+    .container-x {
+      padding-left: max(40px, env(safe-area-inset-left, 0px));
+      padding-right: max(40px, env(safe-area-inset-right, 0px));
+    }
+  }
+
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+  }
+  .on-dark .eyebrow { color: var(--color-muted-dark); }
+
+  .display-xl {
+    font-family: var(--font-display);
+    font-stretch: 118%;
+    font-weight: 820;
+    letter-spacing: -0.03em;
+    line-height: 0.92;
+  }
+  .display-lg {
+    font-family: var(--font-display);
+    font-stretch: 112%;
+    font-weight: 780;
+    letter-spacing: -0.025em;
+    line-height: 1;
+  }
+  .display-md {
+    font-family: var(--font-display);
+    font-stretch: 108%;
+    font-weight: 740;
+    letter-spacing: -0.02em;
+    line-height: 1.05;
+  }
+  .tabular { font-variant-numeric: tabular-nums; }
+
+  /* Hinweis-Chips für Datenstatus */
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border-radius: 999px;
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.2;
+    white-space: nowrap;
+  }
+
+  /* Formularfelder */
+  .field-input {
+    width: 100%;
+    border-radius: 12px;
+    border: 1px solid var(--color-line);
+    background: var(--color-white);
+    padding: 12px 14px;
+    font: inherit;
+    color: var(--color-ink);
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .field-input:focus {
+    outline: none;
+    border-color: var(--color-ink);
+    box-shadow: 0 0 0 4px rgb(183 243 75 / 0.45);
+  }
+  .field-label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+  .field-error { color: var(--color-danger); font-size: 13px; margin-top: 6px; }
+}
+
+/* Lenis Smooth Scrolling */
+html.lenis, html.lenis body { height: auto; }
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+.lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
+.lenis.lenis-stopped { overflow: hidden; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Scroll-Reveal: nur aktiv, wenn <html data-motion="on"> gesetzt ist */
+html[data-motion="on"] .reveal {
+  opacity: 0;
+  transform: translate3d(0, var(--reveal-y, 28px), 0);
+  transition:
+    opacity 0.9s var(--ease-out-expo) var(--reveal-delay, 0ms),
+    transform 1.1s var(--ease-out-expo) var(--reveal-delay, 0ms);
+}
+html[data-motion="on"] .reveal.is-in { opacity: 1; transform: none; }
+
+/* Lichtreflex, der über Karten gleitet */
+.sheen { position: relative; overflow: hidden; isolation: isolate; }
+.sheen::after {
+  content: "";
+  position: absolute;
+  inset: -40% auto -40% -60%;
+  width: 40%;
+  background: linear-gradient(100deg, transparent, rgb(255 255 255 / 0.55), transparent);
+  transform: skewX(-18deg) translateX(-120%);
+  transition: transform 1.1s var(--ease-out-expo);
+  pointer-events: none;
+  z-index: 2;
+}
+.group:hover .sheen::after, .sheen:hover::after { transform: skewX(-18deg) translateX(520%); }
+
+@keyframes logo-in {
+  from { opacity: 0; transform: translateY(-8px) scale(0.96); filter: blur(4px); }
+  to { opacity: 1; transform: none; filter: none; }
+}
+
+/* Notch-Bereich oben beim Scrollen einfärben */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0 0 auto;
+  height: env(safe-area-inset-top, 0px);
+  z-index: 60;
+  background: var(--color-ink-2);
+}
+
+@keyframes step-in {
+  from { opacity: 0; transform: translateX(28px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes step-back {
+  from { opacity: 0; transform: translateX(-28px); }
+  to { opacity: 1; transform: none; }
+}
+
+@property --ray-angle { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+@keyframes rays { to { --ray-angle: 360deg; } }
+@keyframes drift { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(-24px, -18px, 0); } }
+@keyframes scrollcue {
+  0% { transform: translateY(-100%); }
+  60%, 100% { transform: translateY(200%); }
+}
+
+/* Fließende Energie in der Story-Grafik */
+.energy-flow {
+  stroke-dasharray: 0.02 0.06;
+  opacity: 0;
+  transition: opacity 0.6s 0.6s;
+}
+.energy-flow.is-on { opacity: 0.9; animation: energy-flow 2.4s linear infinite; }
+@keyframes energy-flow { to { stroke-dashoffset: -0.8; } }

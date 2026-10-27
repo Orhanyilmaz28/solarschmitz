@@ -1,30 +1,67 @@
-# Sonnenwerk
+# SCHMITZ SOLAR
 
-Startseite für den Solar-Onlineshop **sonnenwerk.de**: Balkonkraftwerke, Stromspeicher, PV-Komplettanlagen und Zubehör.
-Die Ware kommt per Dropshipping von [eforu.solar](https://eforu.solar/pages/balkonkraftwerk-dropshipping).
+Solar-Onlineshop für Balkonkraftwerke, Batteriespeicher, Solarmodule, Wechselrichter und Zubehör.
+Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS 4, GSAP und Lenis für Animationen.
 
-Die Seite ist eine einzelne statische Datei (`index.html`) ohne Build-Schritt. Zum Ansehen einfach im Browser öffnen.
+Der Shop ist auf **Dropshipping** ausgelegt: Es gibt kein eigenes Lager, Bestellungen werden an Lieferanten weitergeleitet.
+Solange Zahlung, Versand und Lieferanten nicht angebunden sind, läuft die Seite im **Vorschau-Modus**. Bestellungen sind dann gesperrt, und das sagt die Seite auch offen.
 
-## Enthalten
+## Schnellstart
 
-- Ertragsrechner (Modulleistung, Ausrichtung, Montage, Strompreis, Speicher) mit passendem Set-Vorschlag
-- Kategorien, Bestseller mit Filter und Suche
-- Warenkorb mit Mengen, Versandkostenfrei-Schwelle (499 €) und Versandkosten (39 €)
-- Anleitung in vier Schritten, FAQ zu den Regeln für Balkonkraftwerke, Newsletter-Feld
-- Hell- und Dunkelmodus, Handy-tauglich
+```bash
+npm install
+cp .env.example .env.local
+npm run dev          # http://localhost:3000
+```
 
-## Produkte
+| Befehl | Zweck |
+|---|---|
+| `npm run dev` | Entwicklungsserver |
+| `npm run build` / `npm start` | Produktions-Build und Start |
+| `npm test` | Tests (Rechner, Empfehlungen, Preisregeln, Import, Bestellungen) |
+| `npm run typecheck` | TypeScript-Prüfung |
+| `npm run logo` | Logo-SVGs aus dem Markennamen neu erzeugen |
+| `npm run import:feed -- --supplier demo-feed --file data/supplier-feeds/demo-feed.csv` | Lieferanten-Feed testen (Vorschau, mit `--commit` übernehmen) |
 
-Die 12 Produkte im Script von `index.html` (Array `P`, Abschnitt „Sortiment“) stammen aus dem Privatkunden-Shop von eforu.solar, Stand Oktober 2026 laut Websuche:
-2 Balkonkraftwerk-Komplettsets (880 W, eins mit Anker SOLIX E1600 Speicher), 6 Speicher (Anker SOLIX, EcoFlow, Zendure) und 4 Zubehörteile (APsystems EZ1-M, Halterung, Anker Smart Meter und Smart Plug).
+## Was drin ist
 
-Die Preise sind die **Endkundenpreise von eforu**. Vor dem Start mit den Händlerkonditionen abgleichen und die eigene Marge einrechnen.
+- **Startseite:** Hero mit animierter Szene (Haus mit Solardach im Abendlicht), Text-Reveal, Sonnenstrahlen, Parallax; Beispielrechnung; Produktwelt mit 6 Kategorien; Scroll-Storytelling „So einfach wird aus Sonnenlicht dein eigener Strom“; Produktfinder; Auswahl; Ratgeber; FAQ.
+- **Produktfinder** (`/konfigurator`): 6 Fragen → passende Sets, Zubehör, Simulation von Jahresproduktion, Ersparnis, Amortisation mit Diagrammen. Alle Annahmen sind sichtbar und änderbar (`src/config/solar-assumptions.ts`).
+- **Shop:** Produktübersicht mit Filtern und Suche, Kategorieseiten, Produktdetailseiten, Suche (auch als Overlay mit Strg+K), Produktvergleich, Warenkorb, Checkout in 5 Schritten (bis zur Freischaltung gesperrt), Kundenkonto-Struktur.
+- **Inhalte:** FAQ, Ratgeber (5 Artikel), Über uns, Kontakt, Versand, Rechtstexte als markierte Entwürfe.
+- **Lieferanten-Integration und Admin** (`/admin`): Adapter für CSV, XML, REST-API und E-Mail-Bestellung; Feld-Mapping, Preisregeln, Bestandsabgleich, Bestellweiterleitung, Versandstatus per Webhook, Sync-Protokoll. Details: [docs/LIEFERANTEN.md](docs/LIEFERANTEN.md).
 
-## Vor dem Start anpassen
+## Wichtige Dateien
 
-- **Preise und Daten** mit dem eforu-Händlerbereich abgleichen, Produktfotos von eforu einbinden (aktuell gezeichnete Platzhalter-Grafiken).
-- **Lieferzeit:** Konstante `DELIVERY` mit eforu abstimmen.
-- **Versand:** `FREE` (499 €) und `SHIP` (39 €) im Abschnitt „Warenkorb“. eforu berechnet Privatkunden laut Produktseite 80 € Versand innerhalb Deutschlands. Prüfen, was für Dropshipping-Partner gilt, sonst zahlst du bei kostenlosem Versand drauf.
-- **MwSt.:** Smart Meter und Smart Plug sind mit 19 % angesetzt, alles andere mit 0 %. Mit eforu klären.
-- **Kasse und Newsletter** sind noch nicht angebunden. Für echte Bestellungen braucht es ein Shopsystem (z. B. Shopify oder WooCommerce mit Dropshipping-Anbindung).
-- **Rechtstexte:** Impressum, AGB, Widerrufsbelehrung und Datenschutz verlinken.
+| Datei | Inhalt |
+|---|---|
+| `src/config/brand.ts` | Markenname, Kontakt, Farben, Bild-Slots. **Name hier ändern**, danach `npm run logo`. |
+| `src/config/site.ts` | Vorschau-Modus, Versandkosten, Lieferzeit, Checkout-Schalter |
+| `src/config/solar-assumptions.ts` | Annahmen für Ertrag und Ersparnis |
+| `src/data/products.ts` | Start-Katalog (wird später durch den Lieferanten-Import ersetzt) |
+| `src/app/globals.css` | Design-Tokens (Farben, Schriften, Animationen) |
+
+## Datenstatus der Produkte
+
+Jedes Produkt hat einen `dataStatus`, der in der Oberfläche sichtbar ist:
+
+- `supplier-unverified` („Vorschau“): aus dem öffentlichen Katalog von eforu.solar übernommen (Stand Okt. 2026). Preise sind Endkundenpreise des Lieferanten, **nicht** deine Verkaufspreise.
+- `demo` („Demo-Produkt“): Platzhalter für Kategorien ohne Lieferantendaten (Solarmodule, 4-Modul-Sets). Ohne Preis, nicht bestellbar.
+- `live`: per Lieferanten-Import bestätigt. Nur diese Produkte werden nach Freischaltung bestellbar.
+
+## Vor dem Livegang
+
+1. Händlerkonditionen, Versandkosten und Lieferzeit mit eforu klären; in `src/config/site.ts` eintragen.
+2. Lieferanten-Feed oder API anbinden (`.env.local`, siehe docs/LIEFERANTEN.md) und importieren.
+3. Datenbank statt Datei-Speicher anbinden (`src/lib/store`), Zahlungsanbieter integrieren (`src/lib/payments`), Mailversand einrichten.
+4. Impressum, Datenschutz, AGB, Widerruf mit echten Firmendaten füllen und anwaltlich prüfen lassen. Kontaktdaten in `src/config/brand.ts`.
+5. Lizenzierte Fotos einbinden (siehe [docs/BILDER.md](docs/BILDER.md)).
+6. `site.previewMode` auf `false`, `CHECKOUT_ENABLED=true` und `PAYMENT_PROVIDER` setzen, erst nach Testbestellungen.
+7. `ADMIN_USER` und `ADMIN_PASSWORD` setzen.
+
+## Weitere Dokumentation
+
+- [docs/ARCHITEKTUR.md](docs/ARCHITEKTUR.md): Aufbau, Datenfluss, Animationen
+- [docs/LIEFERANTEN.md](docs/LIEFERANTEN.md): Lieferanten, Import, Preisregeln, Bestellungen, Webhooks
+- [docs/BILDER.md](docs/BILDER.md): fehlende Bilder und wie man sie einbindet
+- [docs/MARKE.md](docs/MARKE.md): Logo, Farben, Schriften

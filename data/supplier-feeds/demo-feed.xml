@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Beispiel-Feed zum Testen des XML-Imports. Keine echten Angebote. -->
+<katalog lieferant="Demo-Feed">
+  <artikel>
+    <Artikelnummer>DF-X-MOD-440</Artikelnummer>
+    <Bezeichnung>Demo-Feed Solarmodul 440 Wp bifazial</Bezeichnung>
+    <Hersteller>Demo-Feed</Hersteller>
+    <Kategorie>Solarmodul</Kategorie>
+    <preise>
+      <Einkaufspreis_netto>79,00</Einkaufspreis_netto>
+      <UVP>119,00</UVP>
+    </preise>
+    <MwSt>0</MwSt>
+    <Bestand>60</Bestand>
+    <Modulleistung>440 Wp</Modulleistung>
+    <Beschreibung>Beispieldatensatz für den XML-Import &amp; das Feld-Mapping.</Beschreibung>
+  </artikel>
+  <artikel>
+    <Artikelnummer>DF-X-HALT-2</Artikelnummer>
+    <Bezeichnung>Demo-Feed Halterung Flachdach für 2 Module</Bezeichnung>
+    <Hersteller>Demo-Feed</Hersteller>
+    <Kategorie>Halterung</Kategorie>
+    <preise>
+      <Einkaufspreis_netto>41,50</Einkaufspreis_netto>
+      <UVP>79,90</UVP>
+    </preise>
+    <MwSt>0</MwSt>
+    <Bestand>verfügbar</Bestand>
+    <Beschreibung>Beispieldatensatz mit verschachtelten Preisfeldern.</Beschreibung>
+  </artikel>
+</katalog>
