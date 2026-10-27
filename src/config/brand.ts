@@ -7,8 +7,11 @@
 export const brand = {
   /** Markenname, z. B. für Seitentitel */
   name: "Sonnenwerk",
-  /** Wortmarke: erster Teil fett, zweiter Teil leicht; joined = ohne Leerzeichen */
-  wordmark: { primary: "SONNEN", secondary: "WERK", joined: true },
+  /**
+   * Schriftzug im Logo: erster Teil fett, zweiter Teil leicht, ohne Leerzeichen.
+   * Nach einer Änderung `npm run logo` ausführen.
+   */
+  wordmark: { primary: "Sonnen", secondary: "werk" },
   shortName: "Sonnenwerk",
   claim: "Deine Energie. Deine Zukunft.",
   description:
@@ -43,9 +46,10 @@ export const brand = {
     green: "#B7F34B",
     warmWhite: "#F8FAF7",
     lightGrey: "#E9EEF0",
-    /** Sonne im Logo: Verlauf von oben nach unten */
-    sunTop: "#FFCB3D",
-    sunBottom: "#F5841F",
+    /** Sonne im Logo: Verlauf von oben nach unten (Quelle: scripts/build-logo.mjs) */
+    sunTop: "#FFD84D",
+    sunMid: "#FFA42A",
+    sunBottom: "#FF6F1A",
   },
 
   /**

@@ -84,8 +84,8 @@ export function Header() {
         onMouseLeave={scheduleClose}
       >
         <div className="container-x flex h-[76px] items-center gap-3 sm:gap-6">
-          <Link href="/" aria-label="Zur Startseite" className="shrink-0 animate-[logo-in_1s_var(--ease-out-expo)_both]">
-            <Logo tone={tone} size={30} />
+          <Link href="/" aria-label="Zur Startseite" className="shrink-0">
+            <Logo tone={tone} height={26} animated glow={tone === "dark"} className="h-[22px] w-auto min-[400px]:h-[26px]" />
           </Link>
 
           <nav aria-label="Hauptnavigation" className="ml-6 hidden items-center gap-1 lg:flex">

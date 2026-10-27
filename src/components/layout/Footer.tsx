@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Logo } from "@/components/brand/Logo";
+import { logoData } from "@/components/brand/logo-data";
 import { brand } from "@/config/brand";
 import { footerNav, legalNav } from "@/config/navigation";
 import { ButtonLink } from "@/components/ui/Button";
@@ -27,7 +28,7 @@ export function Footer() {
 
         <div className="grid gap-10 py-14 sm:grid-cols-2 lg:grid-cols-[1.4fr_repeat(3,1fr)]">
           <div className="max-w-sm">
-            <Logo tone="dark" size={36} />
+            <Logo tone="dark" height={34} glow />
             <p className="mt-5 text-sm text-muted-dark">{brand.description}</p>
             <dl className="mt-6 space-y-1 text-sm">
               {brand.contact.email && (
@@ -80,14 +81,23 @@ export function Footer() {
         </div>
       </div>
 
-      {/* Große Wortmarke als ruhiger Abschluss */}
-      <div aria-hidden className="pointer-events-none select-none overflow-hidden">
-        <p className="display-xl -mb-[0.18em] whitespace-nowrap text-center text-[13vw] leading-none text-paper/[0.04]">
-          {brand.wordmark.primary}
-          {brand.wordmark.joined ? "" : " "}
-          {brand.wordmark.secondary}
-        </p>
-      </div>
+      {/* Große Signatur als Abschluss: Schrift kaum sichtbar, die Sonne leuchtet */}
+      {logoData.signature && (
+        <div aria-hidden className="pointer-events-none select-none overflow-hidden">
+          <div className="container-x relative pb-3 pt-8 md:pb-5">
+            <div className="relative">
+              <div
+                className="absolute aspect-square w-[22%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(closest-side,rgb(255_150_40/0.35),transparent)] blur-2xl"
+                style={{
+                  left: `${((logoData.signature.mark.x + logoData.signature.mark.size / 2) / logoData.signature.width) * 100}%`,
+                  top: `${((logoData.signature.mark.y + logoData.signature.mark.size / 2) / logoData.signature.height) * 100}%`,
+                }}
+              />
+              <Logo variant="signature" tone="dark" fluid textColor="rgb(248 250 247 / 0.06)" className="relative" />
+            </div>
+          </div>
+        </div>
+      )}
     </footer>
   );
 }

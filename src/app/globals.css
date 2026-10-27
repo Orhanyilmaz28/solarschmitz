@@ -234,3 +234,42 @@ body::before {
 }
 .energy-flow.is-on { opacity: 0.9; animation: energy-flow 2.4s linear infinite; }
 @keyframes energy-flow { to { stroke-dashoffset: -0.8; } }
+
+/* ---------- Logo-Auftritt (Sonnenwerk) ----------
+   Sonne geht im Kreis auf, Zellen laden nacheinander, Reflex gleitet, Schrift steigt auf. */
+.sw-anim .sw-sweep {
+  stroke-dashoffset: 100;
+  animation: sw-sweep 1.15s cubic-bezier(0.65, 0, 0.25, 1) calc(var(--sw-delay, 0ms) + 80ms) forwards;
+}
+.sw-anim .sw-cell {
+  opacity: 0;
+  transform: scale(0.35);
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: sw-cell 0.55s var(--ease-out-expo) forwards;
+  animation-delay: calc(var(--sw-delay, 0ms) + 620ms + var(--i) * 70ms);
+}
+.sw-anim .sw-glint {
+  transform: translate(-48px, -48px);
+  animation: sw-glint 1.1s var(--ease-in-out-soft) calc(var(--sw-delay, 0ms) + 1250ms) forwards;
+}
+.sw-anim .sw-glyph {
+  opacity: 0;
+  transform: translateY(18%);
+  transform-box: fill-box;
+  animation: sw-glyph 0.8s var(--ease-out-expo) forwards;
+  animation-delay: calc(var(--sw-delay, 0ms) + 300ms + var(--i) * 40ms);
+}
+@keyframes sw-sweep { to { stroke-dashoffset: 0; } }
+@keyframes sw-cell { to { opacity: 1; transform: none; } }
+@keyframes sw-glint { from { transform: translate(-48px, -48px); } to { transform: translate(48px, 48px); } }
+@keyframes sw-glyph { to { opacity: 1; transform: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .sw-anim .sw-sweep { animation: none !important; stroke-dashoffset: 0 !important; }
+  .sw-anim .sw-cell, .sw-anim .sw-glyph { animation: none !important; opacity: 1 !important; transform: none !important; }
+  .sw-anim .sw-glint { animation: none !important; transform: none !important; }
+}
+.sw-anim .sw-glow { opacity: 0; animation: sw-glow 1.6s ease-out calc(var(--sw-delay, 0ms) + 500ms) forwards; }
+@keyframes sw-glow { to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .sw-anim .sw-glow { animation: none !important; opacity: 1 !important; } }
