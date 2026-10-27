@@ -22,9 +22,9 @@ const LIME = "#B7F34B";
 
 async function readBrand() {
   const src = await readFile(path.join(root, "src/config/brand.ts"), "utf8");
-  const m = src.match(/wordmark:\s*\{\s*primary:\s*"([^"]+)",\s*secondary:\s*"([^"]*)"\s*\}/);
+  const m = src.match(/wordmark:\s*\{\s*primary:\s*"([^"]+)",\s*secondary:\s*"([^"]*)"(?:,\s*joined:\s*(true|false))?\s*\}/);
   if (!m) throw new Error("Wortmarke in src/config/brand.ts nicht gefunden.");
-  return { primary: m[1], secondary: m[2] };
+  return { primary: m[1], secondary: m[2], joined: m[3] === "true" };
 }
 
 /** Holt eine statische TTF-Instanz (Breite 125 %, gewünschte Stärke) über die Google-Fonts-CSS-API */
@@ -61,7 +61,8 @@ function iconGroup(panelColor, id) {
 }
 
 async function main() {
-  const { primary, secondary } = await readBrand();
+  const { primary, secondary, joined } = await readBrand();
+  const label = joined ? `${primary}${secondary}` : `${primary} ${secondary}`;
   const [bold, regular] = await Promise.all([loadFont(800), loadFont(400)]);
   await mkdir(out, { recursive: true });
 
@@ -71,19 +72,21 @@ async function main() {
   const gap = 18;
   const startX = 64 + gap;
   const a = textPath(bold, primary, startX, baseline, size, 0.02);
-  const b = secondary ? textPath(regular, secondary, startX + a.width + size * 0.32, baseline, size, 0.02) : { d: "", width: 0 };
-  const width = Math.ceil(startX + a.width + (secondary ? size * 0.32 + b.width : 0) + 2);
+  // Zusammengeschrieben: nur die normale Laufweite als Abstand, sonst ein Wortzwischenraum
+  const space = joined ? size * 0.02 : size * 0.32;
+  const b = secondary ? textPath(regular, secondary, startX + a.width + space, baseline, size, 0.02) : { d: "", width: 0 };
+  const width = Math.ceil(startX + a.width + (secondary ? space + b.width : 0) + 2);
 
   const wordmark = (textColor, panelColor, id) =>
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} 64" width="${width}" height="64" role="img" aria-label="${primary} ${secondary}">
-  <title>${primary} ${secondary}</title>
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} 64" width="${width}" height="64" role="img" aria-label="${label}">
+  <title>${label}</title>
   ${iconGroup(panelColor, id)}
   <path d="${a.d}" fill="${textColor}"/>
   <path d="${b.d}" fill="${textColor}"/>
 </svg>
 `;
   const icon = (panelColor, id, tile) =>
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="${primary} ${secondary}">
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="${label}">
   ${tile ? `<rect width="64" height="64" rx="14" fill="${tile}"/><g transform="translate(4 3) scale(0.875)">` : ""}${iconGroup(panelColor, id)}${tile ? "</g>" : ""}
 </svg>
 `;

@@ -1,6 +1,6 @@
 # Lieferanten-Anbindung (Dropshipping)
 
-SCHMITZ SOLAR hält keinen eigenen Lagerbestand. Produkte, Preise und Bestände kommen von Lieferanten;
+Sonnenwerk hält keinen eigenen Lagerbestand. Produkte, Preise und Bestände kommen von Lieferanten;
 Bestellungen werden je Lieferant aufgeteilt und zum Direktversand an die Kundschaft weitergegeben.
 
 ## Überblick
@@ -215,4 +215,4 @@ Bei E.FOR.U (eforu.solar) anfragen bzw. klären:
 - [ ] **Versandstatus/Tracking**: Webhook, API oder E-Mail
 - [ ] **Steuersatz** für Zubehör (Smart Meter, Smart Plug) und **neutraler Versand** (ohne eforu-Rechnung im Paket)
 - [ ] **Produktbilder**: Nutzungsrechte und Bild-URLs im Feed
-- [ ] **Retouren und Gewährleistung**: Ablauf zwischen Kundschaft, SCHMITZ SOLAR und eforu
+- [ ] **Retouren und Gewährleistung**: Ablauf zwischen Kundschaft, Sonnenwerk und eforu

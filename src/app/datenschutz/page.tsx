@@ -10,9 +10,21 @@ export default function PrivacyPage() {
     <LegalPage title="Datenschutzerklärung">
       <h2>1. Verantwortlicher</h2>
       <p>
-        {brand.legal.company ?? <Placeholder>Firmenname und Anschrift</Placeholder>}
+        {brand.legal.company ?? <Placeholder>Firmenname</Placeholder>}
         <br />
-        E-Mail: {brand.contact.email}
+        {brand.contact.address ? (
+          <>
+            {brand.contact.address.street}, {brand.contact.address.zip} {brand.contact.address.city}
+          </>
+        ) : (
+          <Placeholder>Anschrift</Placeholder>
+        )}
+        <br />
+        Vertreten durch: {brand.legal.managingDirector ?? <Placeholder>Geschäftsführung</Placeholder>}
+        <br />
+        Telefon: {brand.contact.phone ?? <Placeholder>Telefonnummer</Placeholder>}
+        <br />
+        E-Mail: {brand.contact.email ?? <Placeholder>E-Mail-Adresse ergänzen</Placeholder>}
       </p>
 
       <h2>2. Hosting und Server-Logfiles</h2>

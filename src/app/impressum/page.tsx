@@ -22,6 +22,8 @@ export default function ImprintPage() {
             {contact.address.street}
             <br />
             {contact.address.zip} {contact.address.city}
+            <br />
+            {contact.address.country}
           </>
         ) : (
           <Placeholder>Straße, PLZ und Ort ergänzen</Placeholder>
@@ -35,14 +37,16 @@ export default function ImprintPage() {
 
       <h2>Kontakt</h2>
       <p>
-        E-Mail: {contact.email}
-        <br />
         Telefon: <Value value={contact.phone} label="Telefonnummer" />
+        <br />
+        E-Mail: <Value value={contact.email} label="E-Mail-Adresse" />
       </p>
 
       <h2>Registereintrag</h2>
       <p>
-        <Value value={legal.register} label="Registergericht und Registernummer (falls vorhanden)" />
+        Eintragung im Handelsregister.
+        <br />
+        <Value value={legal.register} label="Registergericht und HRB-Nummer" />
       </p>
 
       <h2>Umsatzsteuer-ID</h2>
@@ -67,7 +71,15 @@ export default function ImprintPage() {
 
       <h2>Verantwortlich für den Inhalt</h2>
       <p>
-        <Placeholder>Name und Anschrift nach § 18 Abs. 2 MStV</Placeholder>
+        {legal.contentResponsible && contact.address ? (
+          <>
+            Verantwortlich nach § 18 Abs. 2 MStV: {legal.contentResponsible}
+            <br />
+            {contact.address.street}, {contact.address.zip} {contact.address.city}
+          </>
+        ) : (
+          <Placeholder>Name und Anschrift nach § 18 Abs. 2 MStV</Placeholder>
+        )}
       </p>
     </LegalPage>
   );

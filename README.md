@@ -1,5 +1,6 @@
-# SCHMITZ SOLAR
+# Sonnenwerk
 
+Onlineshop **sonnenwerk.de** der Energiezentrale Schmitz UG (haftungsbeschränkt), Hilden.
 Solar-Onlineshop für Balkonkraftwerke, Batteriespeicher, Solarmodule, Wechselrichter und Zubehör.
 Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS 4, GSAP und Lenis für Animationen.
 
@@ -54,7 +55,7 @@ Jedes Produkt hat einen `dataStatus`, der in der Oberfläche sichtbar ist:
 1. Händlerkonditionen, Versandkosten und Lieferzeit mit eforu klären; in `src/config/site.ts` eintragen.
 2. Lieferanten-Feed oder API anbinden (`.env.local`, siehe docs/LIEFERANTEN.md) und importieren.
 3. Datenbank statt Datei-Speicher anbinden (`src/lib/store`), Zahlungsanbieter integrieren (`src/lib/payments`), Mailversand einrichten.
-4. Impressum, Datenschutz, AGB, Widerruf mit echten Firmendaten füllen und anwaltlich prüfen lassen. Kontaktdaten in `src/config/brand.ts`.
+4. In `src/config/brand.ts` noch E-Mail-Adresse, Registergericht/HRB-Nummer und ggf. USt-IdNr. eintragen. Rechtstexte anwaltlich prüfen lassen.
 5. Lizenzierte Fotos einbinden (siehe [docs/BILDER.md](docs/BILDER.md)).
 6. `site.previewMode` auf `false`, `CHECKOUT_ENABLED=true` und `PAYMENT_PROVIDER` setzen, erst nach Testbestellungen.
 7. `ADMIN_USER` und `ADMIN_PASSWORD` setzen.

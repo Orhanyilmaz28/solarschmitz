@@ -1,15 +1,15 @@
-# Marke: SCHMITZ SOLAR
+# Marke: Sonnenwerk
 
 ## Name ändern
 
-Der Name steht nur an einer Stelle: `src/config/brand.ts` (`name`, `wordmark`, `shortName`).
+Der Name steht nur an einer Stelle: `src/config/brand.ts` (`name`, `wordmark`, `shortName`). Mit `joined: true` wird die Wortmarke ohne Leerzeichen gesetzt.
 Danach `npm run logo` ausführen, damit die SVG-Dateien neu erzeugt werden (braucht Internet für die Schrift; hinter einem Proxy `NODE_USE_ENV_PROXY=1 npm run logo`).
 
 ## Logo
 
 **Bildmarke:** Eine Sonne geht hinter einem geneigten Solarmodul auf. Die Fugen zwischen den Zellen und der Spalt zur Sonne sind ausgestanzt, damit das Zeichen auf jedem Untergrund sauber steht und auch als 16-px-Favicon lesbar bleibt.
 
-**Wortmarke:** Archivo in breiter Ausprägung (125 %), erster Teil fett (800), zweiter Teil normal (400).
+**Wortmarke:** SONNENWERK in Archivo, breite Ausprägung (125 %), zusammengeschrieben: „SONNEN“ fett (800), „WERK“ normal (400).
 
 | Datei | Verwendung |
 |---|---|

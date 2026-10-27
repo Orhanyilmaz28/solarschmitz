@@ -64,7 +64,10 @@ export function Logo({ tone = "light", className = "", size = 36, showWordmark =
       {showWordmark && (
         <span className="font-display leading-none whitespace-nowrap" style={{ fontStretch: "125%", letterSpacing: "0.02em" }}>
           <span style={{ fontWeight: 800 }}>{brand.wordmark.primary}</span>
-          <span style={{ fontWeight: 400 }}> {brand.wordmark.secondary}</span>
+          <span style={{ fontWeight: 400 }}>
+            {brand.wordmark.joined ? "" : " "}
+            {brand.wordmark.secondary}
+          </span>
         </span>
       )}
       {!showWordmark && <span className="sr-only">{brand.name}</span>}

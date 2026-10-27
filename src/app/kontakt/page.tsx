@@ -30,7 +30,7 @@ export default function ContactPage() {
             <dl className="mt-5 space-y-4 text-[15px]">
               <div>
                 <dt className="text-sm text-muted-dark">E-Mail</dt>
-                <dd className="mt-1 select-all font-semibold">{contact.email}</dd>
+                <dd className="mt-1 select-all font-semibold">{contact.email ?? <span className="font-normal text-muted-dark">folgt in Kürze</span>}</dd>
               </div>
               <div>
                 <dt className="text-sm text-muted-dark">Telefon</dt>

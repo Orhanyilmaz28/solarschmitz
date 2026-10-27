@@ -48,7 +48,7 @@ export const useCart = create<CartState>()(
       close: () => set({ isOpen: false }),
     }),
     {
-      name: "schmitz-solar-cart",
+      name: "sonnenwerk-cart",
       storage: createJSONStorage(() => localStorage),
       partialize: (s) => ({ lines: s.lines }),
       // Wird in <Providers> nach dem ersten Rendern geladen (vermeidet Hydration-Fehler)

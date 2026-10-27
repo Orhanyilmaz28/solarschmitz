@@ -5,27 +5,37 @@
  * SVG-Dateien in /public/brand neu erzeugt werden.
  */
 export const brand = {
-  /** Vollständiger Markenname, z. B. für Titel und Rechtstexte */
-  name: "SCHMITZ SOLAR",
-  /** Wortmarke: erster Teil fett, zweiter Teil leicht */
-  wordmark: { primary: "SCHMITZ", secondary: "SOLAR" },
-  shortName: "Schmitz Solar",
+  /** Markenname, z. B. für Seitentitel */
+  name: "Sonnenwerk",
+  /** Wortmarke: erster Teil fett, zweiter Teil leicht; joined = ohne Leerzeichen */
+  wordmark: { primary: "SONNEN", secondary: "WERK", joined: true },
+  shortName: "Sonnenwerk",
   claim: "Deine Energie. Deine Zukunft.",
   description:
     "Balkonkraftwerke, Batteriespeicher, Solarmodule und Zubehör. Mit Produktfinder, Ertragsrechner und persönlicher Beratung.",
 
-  // TODO: echte Daten eintragen, bevor die Seite live geht.
-  domain: "schmitz-solar.de",
+  domain: "sonnenwerk.de",
   contact: {
-    email: "kontakt@schmitz-solar.de",
-    phone: null as string | null,
+    // TODO: E-Mail-Adresse eintragen (Pflichtangabe im Impressum)
+    email: null as string | null,
+    phone: "0176 42903444" as string | null,
     hours: "Mo–Fr 9–17 Uhr",
-    address: null as null | { street: string; zip: string; city: string },
+    address: { street: "Richrather Straße 69", zip: "40723", city: "Hilden", country: "Deutschland" } as null | {
+      street: string;
+      zip: string;
+      city: string;
+      country: string;
+    },
   },
+  /** Anbieter laut Impressum */
   legal: {
-    company: null as string | null,
-    managingDirector: null as string | null,
+    company: "Energiezentrale Schmitz UG (haftungsbeschränkt)" as string | null,
+    managingDirector: "Philipp Schmitz (Geschäftsführer)" as string | null,
+    /** Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV */
+    contentResponsible: "Philipp Schmitz" as string | null,
+    // TODO: Registergericht und HRB-Nummer (UG ist im Handelsregister eingetragen)
     register: null as string | null,
+    // TODO: USt-IdNr., falls vorhanden
     vatId: null as string | null,
   },
 

@@ -28,6 +28,6 @@ export const useCompare = create<CompareState>()(
       remove: (id) => set((s) => ({ ids: s.ids.filter((x) => x !== id) })),
       clear: () => set({ ids: [] }),
     }),
-    { name: "schmitz-solar-compare", storage: createJSONStorage(() => localStorage), skipHydration: true },
+    { name: "sonnenwerk-compare", storage: createJSONStorage(() => localStorage), skipHydration: true },
   ),
 );

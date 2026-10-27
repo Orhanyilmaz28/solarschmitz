@@ -19,7 +19,7 @@ export default function WithdrawalPage() {
       <p>
         Um dein Widerrufsrecht auszuüben, musst du uns ({legal.company ?? <Placeholder>Firmenname</Placeholder>},{" "}
         {contact.address ? `${contact.address.street}, ${contact.address.zip} ${contact.address.city}` : <Placeholder>Anschrift</Placeholder>},
-        E-Mail: {contact.email}) mittels einer eindeutigen Erklärung (z. B. per E-Mail oder Brief) über deinen Entschluss informieren, diesen Vertrag
+        Telefon: {contact.phone ?? <Placeholder>Telefon</Placeholder>}, E-Mail: {contact.email ?? <Placeholder>E-Mail-Adresse</Placeholder>}) mittels einer eindeutigen Erklärung (z. B. per E-Mail oder Brief) über deinen Entschluss informieren, diesen Vertrag
         zu widerrufen.
       </p>
 

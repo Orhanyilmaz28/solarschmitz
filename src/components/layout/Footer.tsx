@@ -30,10 +30,18 @@ export function Footer() {
             <Logo tone="dark" size={36} />
             <p className="mt-5 text-sm text-muted-dark">{brand.description}</p>
             <dl className="mt-6 space-y-1 text-sm">
-              <div className="flex gap-2">
-                <dt className="text-muted-dark">E-Mail</dt>
-                <dd className="select-all">{brand.contact.email}</dd>
-              </div>
+              {brand.contact.email && (
+                <div className="flex gap-2">
+                  <dt className="text-muted-dark">E-Mail</dt>
+                  <dd className="select-all">{brand.contact.email}</dd>
+                </div>
+              )}
+              {brand.contact.phone && (
+                <div className="flex gap-2">
+                  <dt className="text-muted-dark">Telefon</dt>
+                  <dd className="select-all">{brand.contact.phone}</dd>
+                </div>
+              )}
               <div className="flex gap-2">
                 <dt className="text-muted-dark">Erreichbar</dt>
                 <dd>{brand.contact.hours}</dd>
@@ -58,7 +66,7 @@ export function Footer() {
 
         <div className="flex flex-col gap-4 border-t border-ink-line py-6 text-sm text-muted-dark md:flex-row md:items-center md:justify-between" style={{ paddingBottom: "max(24px, env(safe-area-inset-bottom, 0px))" }}>
           <p>
-            © {year} {brand.name}. Vorschau-Version, Bestellungen sind noch nicht möglich.
+            © {year} {brand.legal.company ?? brand.name}. Vorschau-Version, Bestellungen sind noch nicht möglich.
           </p>
           <ul className="flex flex-wrap gap-x-5 gap-y-2">
             {legalNav.map((l) => (
@@ -74,7 +82,11 @@ export function Footer() {
 
       {/* Große Wortmarke als ruhiger Abschluss */}
       <div aria-hidden className="pointer-events-none select-none overflow-hidden">
-        <p className="display-xl -mb-[0.18em] whitespace-nowrap text-center text-[18vw] leading-none text-paper/[0.04]">{brand.wordmark.primary}</p>
+        <p className="display-xl -mb-[0.18em] whitespace-nowrap text-center text-[13vw] leading-none text-paper/[0.04]">
+          {brand.wordmark.primary}
+          {brand.wordmark.joined ? "" : " "}
+          {brand.wordmark.secondary}
+        </p>
       </div>
     </footer>
   );
