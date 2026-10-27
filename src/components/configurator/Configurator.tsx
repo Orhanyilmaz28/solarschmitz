@@ -1,488 +1,420 @@
 "use client";
 
-import Link from "next/link";
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import type { InstallLocation } from "@/lib/catalog/types";
-import { solarAssumptions, type OrientationKey } from "@/config/solar-assumptions";
-import { powerRanges, recommend, recommendAccessories, type FinderAnswers, type ModuleCount, type PowerWish, type StorageWish } from "@/lib/solar/recommend";
-import { defaultAssumptions, simulate, type Assumptions } from "@/lib/solar/calc";
-import { hasPrice } from "@/lib/catalog";
-import { formatEUR, formatInt, formatNumber } from "@/lib/format";
-import { ProductVisual } from "@/components/illustrations/ProductVisual";
-import { PriceTag, DataStatusChip } from "@/components/shop/DataStatus";
-import { AddToCartButton } from "@/components/shop/ProductActions";
-import { Button, ButtonLink } from "@/components/ui/Button";
-import { CountUp } from "@/components/motion/CountUp";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import type { FinderAnswers, Independence, Place, Priority } from "@/lib/solar/recommend";
+import { Icon, type IconName } from "@/components/ui/Icon";
+import { Button } from "@/components/ui/Button";
 import { getLenis } from "@/components/motion/SmoothScroll";
-import { CashflowChart, MonthlyChart } from "./SavingsChart";
-import { AssumptionsPanel } from "./AssumptionsPanel";
-import { StepIcon } from "./StepIcons";
+import { PlaceScene } from "./scenes/PlaceScene";
+import { DayCurve } from "./DayCurve";
+import { Result } from "./Result";
+import { independenceOptions, placeOptions, priorityOptions, stepTitles, type ChoiceOption } from "./options";
 
-type Draft = Partial<FinderAnswers> & { orientation?: OrientationKey };
+type Draft = Partial<FinderAnswers>;
+type Step = 0 | 1 | 2 | 3;
 
-interface Option<V> {
-  value: V;
-  label: string;
-  hint: string;
-  icon: string;
-}
-
-interface StepDef {
-  key: keyof Draft;
-  question: string;
-  help: string;
-  options: Option<unknown>[];
-}
-
-const steps: StepDef[] = [
-  {
-    key: "location",
-    question: "Wo möchtest du deine Solaranlage installieren?",
-    help: "Balkon, Flachdach, Schrägdach oder Garten: Der Ort bestimmt Halterung und Ertrag.",
-    options: [
-      { value: "balkon", label: "Balkon", hint: "Am Geländer oder an der Brüstung", icon: "balkon" },
-      { value: "flachdach", label: "Flachdach", hint: "Garage, Carport oder Bungalow", icon: "flachdach" },
-      { value: "schraegdach", label: "Schrägdach", hint: "Ziegel- oder Blechdach", icon: "schraegdach" },
-      { value: "garten", label: "Garten", hint: "Terrasse, Rasen oder Freifläche", icon: "garten" },
-    ],
-  },
-  {
-    key: "orientation",
-    question: "In welche Richtung zeigt die Fläche?",
-    help: "Süden bringt am meisten. Ost/West verteilt den Strom besser über den Tag.",
-    options: [
-      { value: "sued", label: "Süd", hint: "Höchster Ertrag", icon: "sued" },
-      { value: "suedost_suedwest", label: "Südost / Südwest", hint: "Etwa 6 % weniger als Süd", icon: "suedwest" },
-      { value: "ost_west", label: "Ost / West", hint: "Strom morgens und abends", icon: "ostwest" },
-      { value: "nord", label: "Nord", hint: "Deutlich weniger Ertrag", icon: "nord" },
-    ],
-  },
-  {
-    key: "storage",
-    question: "Mit oder ohne Batteriespeicher?",
-    help: "Ein Speicher hebt Mittagsstrom für den Abend auf und erhöht deinen Eigenverbrauch.",
-    options: [
-      { value: "ja", label: "Mit Speicher", hint: "Strom auch am Abend nutzen", icon: "speicher" },
-      { value: "nein", label: "Ohne Speicher", hint: "Günstiger Einstieg", icon: "ohne" },
-      { value: "offen", label: "Weiß ich noch nicht", hint: "Zeig mir beides", icon: "offen" },
-    ],
-  },
-  {
-    key: "modules",
-    question: "Wie viele Solarmodule sind möglich?",
-    help: "Ein Modul misst ungefähr 1,1 × 1,8 m. An Balkongeländern passen meist zwei.",
-    options: [
-      { value: 1, label: "1 Modul", hint: "Kleine Fläche", icon: "m1" },
-      { value: 2, label: "2 Module", hint: "Typisch für Balkone", icon: "m2" },
-      { value: 4, label: "4 Module", hint: "Garten, Flachdach, Dach", icon: "m4" },
-    ],
-  },
-  {
-    key: "power",
-    question: "Welche ungefähre Leistung wünschst du?",
-    help: "Erlaubt sind bis zu 2.000 Wp Modulleistung bei 800 W Einspeisung.",
-    options: (Object.keys(powerRanges) as PowerWish[]).map((k) => ({ value: k, label: powerRanges[k].label, hint: powerRanges[k].hint, icon: `p-${k}` })),
-  },
-  {
-    key: "budget",
-    question: "Welches Budget hast du?",
-    help: "Wir zeigen dir zuerst, was in deinen Rahmen passt.",
-    options: [
-      { value: 500, label: "bis 500 €", hint: "Einstieg ohne Speicher", icon: "b1" },
-      { value: 1000, label: "bis 1.000 €", hint: "Größere Sets", icon: "b2" },
-      { value: 1500, label: "bis 1.500 €", hint: "Sets mit Speicher", icon: "b3" },
-      { value: null, label: "Budget offen", hint: "Beste Lösung zeigen", icon: "b4" },
-    ],
-  },
-];
-
-const locationToMounting: Record<InstallLocation, keyof typeof solarAssumptions.mounting> = {
-  balkon: "balkon",
-  flachdach: "flachdach",
-  schraegdach: "schraegdach",
-  garten: "garten",
-};
-
-const answerLabel = (key: keyof Draft, value: unknown) => steps.find((s) => s.key === key)?.options.find((o) => o.value === value)?.label ?? "–";
-
+/**
+ * Solar-Konfigurator 2.0
+ * Drei Fragen (Ort, Unabhängigkeit, Priorität) und ein Ergebnis, das vollständig
+ * aus den Antworten und offen gelegten Annahmen abgeleitet wird.
+ */
 export function Configurator({ id = "produktfinder" }: { id?: string }) {
   const [draft, setDraft] = useState<Draft>({});
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState<Step>(0);
   const [direction, setDirection] = useState<1 | -1>(1);
+  const [interacted, setInteracted] = useState(false);
   const root = useRef<HTMLDivElement>(null);
-  const done = step >= steps.length;
+
+  const answers: FinderAnswers | null =
+    draft.place && draft.independence && draft.priority ? { place: draft.place, independence: draft.independence, priority: draft.priority } : null;
+
+  const reached = (s: Step) => s === 0 || (s === 1 && !!draft.place) || (s === 2 && !!draft.independence) || (s === 3 && !!answers);
 
   const scrollIntoView = () => {
     const el = root.current;
     if (!el) return;
     const top = el.getBoundingClientRect().top;
-    if (top < 0 || top > window.innerHeight * 0.5) {
+    // knapp unter dem (sticky) Header ausrichten, damit der ganze Schritt sichtbar ist
+    const header = document.querySelector("header")?.getBoundingClientRect().height ?? 80;
+    if (top < header - 40 || top > window.innerHeight * 0.4) {
+      const target = window.scrollY + top - header - 12;
       const lenis = getLenis();
-      const target = window.scrollY + top - 96;
       if (lenis) lenis.scrollTo(target, { duration: 0.9 });
       else window.scrollTo({ top: target, behavior: "smooth" });
     }
   };
 
-  const choose = (key: keyof Draft, value: unknown) => {
-    setDraft((d) => ({ ...d, [key]: value }));
-    setDirection(1);
-    window.setTimeout(() => {
-      setStep((s) => s + 1);
-      scrollIntoView();
-    }, 220);
-  };
-
-  const goTo = (i: number) => {
-    setDirection(i < step ? -1 : 1);
-    setStep(i);
+  const goTo = (s: Step) => {
+    setDirection(s < step ? -1 : 1);
+    setStep(s);
+    setInteracted(true);
     scrollIntoView();
   };
 
-  const answers: FinderAnswers | null =
-    draft.location && draft.storage && draft.modules && draft.power && draft.budget !== undefined
-      ? { location: draft.location, storage: draft.storage as StorageWish, modules: draft.modules as ModuleCount, power: draft.power, budget: draft.budget ?? null }
-      : null;
+  const next = () => {
+    if (step < 3 && reached((step + 1) as Step)) goTo((step + 1) as Step);
+  };
+
+  const set = <K extends keyof FinderAnswers>(key: K, value: FinderAnswers[K], advance: boolean) => {
+    setDraft((d) => ({ ...d, [key]: value }));
+    setInteracted(true);
+    if (advance) window.setTimeout(() => goTo((step + 1) as Step), 260);
+  };
 
   return (
     <div id={id} ref={root} className="scroll-mt-28">
-      <div className="overflow-hidden rounded-[28px] border border-line bg-white shadow-[var(--shadow-soft)]">
-        {/* Fortschritt */}
-        <div className="flex items-center gap-4 border-b border-line px-5 py-4 md:px-8">
-          <div className="flex flex-1 gap-1.5" aria-hidden>
-            {steps.map((s, i) => (
-              <span key={s.key} className="h-1.5 flex-1 overflow-hidden rounded-full bg-mist">
-                <span
-                  className="block h-full rounded-full bg-ink transition-[width] duration-700 ease-[var(--ease-out-expo)]"
-                  style={{ width: i < step ? "100%" : i === step ? "35%" : "0%" }}
-                />
-              </span>
-            ))}
-          </div>
-          <p className="shrink-0 font-mono text-xs text-muted tabular" aria-live="polite">
-            {done ? "Fertig" : `Frage ${step + 1} von ${steps.length}`}
-          </p>
-        </div>
+      <div className="overflow-hidden rounded-[32px] border border-line bg-white">
+        <Progress step={step} reached={reached} onJump={goTo} />
 
-        {!done ? (
-          <StepView
-            key={step}
-            def={steps[step]!}
-            value={draft[steps[step]!.key]}
-            direction={direction}
-            onChoose={(v) => choose(steps[step]!.key, v)}
-            onBack={step > 0 ? () => goTo(step - 1) : undefined}
-          />
-        ) : (
-          answers && (
-            <Results
+        <div key={step} style={{ animation: `${direction === 1 ? "step-in" : "step-back"} 0.6s var(--ease-out-expo) both` }}>
+          {step === 0 && (
+            <StepFrame
+              index={0}
+              question="Wo möchtest du deine Energie erzeugen?"
+              help="Der Ort bestimmt Halterung, Neigung und damit den Ertrag."
+              focus={interacted}
+              canNext={!!draft.place}
+              onNext={next}
+            >
+              <PlaceChoice value={draft.place} onChange={(v, adv) => set("place", v, adv)} />
+            </StepFrame>
+          )}
+          {step === 1 && (
+            <StepFrame
+              index={1}
+              question="Wie unabhängig möchtest du werden?"
+              help="Ein Speicher hebt Strom vom Mittag für den Abend auf. Ohne Speicher nutzt du Solarstrom, wenn er entsteht."
+              focus={interacted}
+              canNext={!!draft.independence}
+              onBack={() => goTo(0)}
+              onNext={next}
+              aside={<IndependenceVisual value={draft.independence} />}
+            >
+              <ChoiceGroup<Independence> name="independence" options={independenceOptions} value={draft.independence} columns={1} onChange={(v, adv) => set("independence", v, adv)} />
+            </StepFrame>
+          )}
+          {step === 2 && (
+            <StepFrame
+              index={2}
+              question="Was ist dir besonders wichtig?"
+              help="Danach gewichten wir die Vorschläge. Die Antwort kannst du jederzeit ändern."
+              focus={interacted}
+              canNext={!!draft.priority}
+              onBack={() => goTo(1)}
+              onNext={next}
+              nextLabel="Ergebnis zeigen"
+            >
+              <ChoiceGroup<Priority> name="priority" options={priorityOptions} value={draft.priority} columns={2} onChange={(v, adv) => set("priority", v, adv)} />
+            </StepFrame>
+          )}
+          {step === 3 && answers && (
+            <Result
               answers={answers}
-              orientation={draft.orientation ?? "sued"}
-              summary={
-                <ul className="flex flex-wrap gap-2">
-                  {steps.map((s, i) => (
-                    <li key={s.key}>
-                      <button type="button" onClick={() => goTo(i)} className="chip border border-line bg-paper text-ink hover:border-ink" title="Antwort ändern">
-                        {answerLabel(s.key, draft[s.key] ?? (s.key === "budget" ? null : undefined))}
-                        <svg viewBox="0 0 12 12" className="h-3 w-3 text-muted" aria-hidden>
-                          <path d="M8.5 1.5l2 2-6 6H2.5v-2z" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
-                        </svg>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              }
+              onEdit={(s) => goTo(s)}
               onRestart={() => {
                 setDraft({});
                 goTo(0);
               }}
             />
-          )
-        )}
+          )}
+        </div>
       </div>
     </div>
   );
 }
 
-function StepView({
-  def,
-  value,
-  direction,
-  onChoose,
-  onBack,
-}: {
-  def: StepDef;
-  value: unknown;
-  direction: 1 | -1;
-  onChoose: (v: unknown) => void;
-  onBack?: () => void;
-}) {
-  const first = useRef<HTMLInputElement>(null);
-  useEffect(() => {
-    // Fokus nur setzen, wenn der Nutzer schon im Finder ist (nicht beim Laden der Seite)
-    if (document.activeElement && document.activeElement !== document.body) first.current?.focus({ preventScroll: true });
-  }, []);
-  const cols = def.options.length === 3 ? "sm:grid-cols-3" : "sm:grid-cols-2 lg:grid-cols-4";
+/* ---------------- Fortschritt ---------------- */
+
+function Progress({ step, reached, onJump }: { step: Step; reached: (s: Step) => boolean; onJump: (s: Step) => void }) {
   return (
-    <fieldset
-      className="m-0 min-w-0 border-0 p-5 md:p-8"
-      style={{ animation: `${direction === 1 ? "step-in" : "step-back"} 0.6s var(--ease-out-expo) both` }}
-    >
-      <legend className="display-md float-left mb-2 w-full p-0 text-[26px] md:text-[34px]">{def.question}</legend>
-      <p className="clear-both mb-7 max-w-2xl text-muted">{def.help}</p>
-      <div className={`grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 ${cols}`}>
-        {def.options.map((o, i) => {
-          const checked = value === o.value;
-          const id = `${def.key}-${String(o.value)}`;
+    <nav aria-label="Fortschritt" className="border-b border-line px-5 py-3 sm:py-4 md:px-10">
+      <p className="m-0 mb-2.5 text-sm sm:hidden" aria-hidden>
+        <span className="font-mono text-xs text-muted">Schritt {step + 1} von 4 · </span>
+        <span className="font-semibold">{stepTitles[step]}</span>
+      </p>
+      <ol className="m-0 grid list-none grid-cols-4 gap-2 p-0 md:gap-4">
+        {stepTitles.map((title, i) => {
+          const s = i as Step;
+          const done = s < step;
+          const current = s === step;
+          const can = reached(s) && !current;
           return (
-            <label
-              key={id}
-              htmlFor={id}
-              className={`group relative flex cursor-pointer flex-col gap-4 rounded-2xl border p-5 transition-[border-color,background-color,transform,box-shadow] duration-300 ease-[var(--ease-out-expo)] hover:-translate-y-0.5 has-[:focus-visible]:ring-4 has-[:focus-visible]:ring-lime/60 ${
-                checked ? "border-ink bg-ink text-paper shadow-[var(--shadow-lift)]" : "border-line bg-paper hover:border-ink/40 hover:bg-white"
-              }`}
-            >
-              <input
-                ref={i === 0 ? first : undefined}
-                id={id}
-                type="radio"
-                name={def.key}
-                className="sr-only"
-                checked={checked}
-                onChange={() => onChoose(o.value)}
-                onClick={() => checked && onChoose(o.value)}
-              />
-              <StepIcon name={o.icon} active={checked} />
-              <span>
-                <span className="block text-lg font-semibold">{o.label}</span>
-                <span className={`block text-sm ${checked ? "text-paper/70" : "text-muted"}`}>{o.hint}</span>
-              </span>
-              <span
-                aria-hidden
-                className={`absolute right-4 top-4 grid h-6 w-6 place-items-center rounded-full border transition-colors ${checked ? "border-lime bg-lime text-ink" : "border-line"}`}
+            <li key={title} className="min-w-0">
+              <button
+                type="button"
+                disabled={!can}
+                onClick={() => onJump(s)}
+                aria-current={current ? "step" : undefined}
+                aria-label={`Schritt ${i + 1}: ${title}${done ? " (erledigt)" : current ? " (aktuell)" : ""}`}
+                className="group flex w-full flex-col gap-2 text-left disabled:cursor-default"
               >
-                {checked && (
-                  <svg viewBox="0 0 16 16" className="h-3.5 w-3.5">
-                    <path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                )}
-              </span>
-            </label>
-          );
-        })}
-      </div>
-      <div className="mt-6 flex min-h-12 items-center justify-between">
-        {onBack ? (
-          <Button variant="ghost" onClick={onBack}>
-            ← Zurück
-          </Button>
-        ) : (
-          <span className="text-sm text-muted">Dauert etwa eine Minute.</span>
-        )}
-      </div>
-    </fieldset>
-  );
-}
-
-function Results({ answers, orientation, summary, onRestart }: { answers: FinderAnswers; orientation: OrientationKey; summary: ReactNode; onRestart: () => void }) {
-  const recs = useMemo(() => recommend(answers), [answers]);
-  const extras = useMemo(() => recommendAccessories(answers), [answers]);
-  const [selected, setSelected] = useState(0);
-  const [assumptions, setAssumptions] = useState<Assumptions>(defaultAssumptions);
-  const rec = recs[selected] ?? recs[0];
-
-  const sim = useMemo(() => {
-    if (!rec) return null;
-    const p = rec.product;
-    return simulate({
-      totalWp: p.specs.totalWp ?? 880,
-      orientation,
-      mounting: locationToMounting[answers.location],
-      withStorage: Boolean(p.specs.storageKWh),
-      systemCostEUR: hasPrice(p) ? p.price : null,
-      assumptions,
-    });
-  }, [rec, orientation, answers.location, assumptions]);
-
-  if (!rec || !sim) {
-    return (
-      <div className="p-8 text-center">
-        <p className="display-md text-2xl">Dafür haben wir noch kein passendes Set.</p>
-        <p className="mt-2 text-muted">Schreib uns, wir beraten dich persönlich.</p>
-        <div className="mt-6 flex justify-center gap-3">
-          <ButtonLink href="/kontakt" variant="dark" arrow>
-            Beratung anfragen
-          </ButtonLink>
-          <Button variant="outline" onClick={onRestart}>
-            Neu starten
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  const roofNote = answers.location === "schraegdach";
-
-  return (
-    <div style={{ animation: "step-in 0.7s var(--ease-out-expo) both" }}>
-      <div className="flex flex-col gap-4 p-5 md:flex-row md:items-end md:justify-between md:p-8">
-        <div>
-          <p className="eyebrow">Dein Ergebnis</p>
-          <h3 className="display-md mt-2 text-[28px] md:text-[38px]">Diese Lösungen passen zu dir.</h3>
-        </div>
-        <Button variant="outline" size="sm" onClick={onRestart}>
-          Neu starten
-        </Button>
-      </div>
-      <div className="px-5 md:px-8">{summary}</div>
-
-      {roofNote && (
-        <p className="mx-5 mt-5 rounded-2xl bg-sun-soft/70 px-4 py-3 text-sm text-[#5a3a00] md:mx-8">
-          Auf dem Schrägdach sind steckerfertige Sets möglich, die Montage auf dem Dach sollte aber ein Fachbetrieb übernehmen.
-          Für größere Dachanlagen über 2.000 Wp beraten wir dich gern persönlich.
-        </p>
-      )}
-
-      {/* Empfehlungen */}
-      <ul className={`grid gap-4 p-5 md:p-8 ${recs.length >= 3 ? "md:grid-cols-3" : recs.length === 2 ? "md:grid-cols-2 lg:max-w-[880px]" : "md:max-w-[460px]"}`} role="list">
-        {recs.map((r, i) => {
-          const active = i === selected;
-          return (
-            <li key={r.product.id}>
-              <div
-                className={`relative flex h-full flex-col overflow-hidden rounded-2xl border transition-[border-color,box-shadow] duration-300 ${
-                  active ? "border-ink shadow-[var(--shadow-lift)]" : "border-line"
-                }`}
-              >
-                {i === 0 && <span className="chip absolute left-4 top-4 z-[2] bg-lime text-ink">Beste Übereinstimmung</span>}
-                <button
-                  type="button"
-                  onClick={() => setSelected(i)}
-                  aria-pressed={active}
-                  className="relative block aspect-[16/10] max-w-full bg-[radial-gradient(120%_90%_at_30%_10%,#fff_0%,#e9eef0_75%)]"
-                  aria-label={`${r.product.name} in der Simulation anzeigen`}
-                >
-                  <ProductVisual visual={r.product.visual} className="absolute inset-[10%] h-[80%] w-[80%]" />
-                </button>
-                <div className="flex flex-1 flex-col gap-3 p-5">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <DataStatusChip product={r.product} />
-                  </div>
-                  <p className="font-semibold leading-snug">{r.product.name}</p>
-                  <ul className="space-y-1.5 text-sm">
-                    {r.reasons.slice(0, 3).map((reason) => (
-                      <li key={reason} className="flex gap-2">
-                        <span aria-hidden className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-lime-deep" />
-                        {reason}
-                      </li>
-                    ))}
-                    {r.caveats.map((c) => (
-                      <li key={c} className="flex gap-2 text-muted">
-                        <span aria-hidden className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-sun" />
-                        {c}
-                      </li>
-                    ))}
-                  </ul>
-                  <div className="mt-auto flex items-end justify-between gap-3 pt-2">
-                    <PriceTag product={r.product} />
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <AddToCartButton product={r.product} size="sm" />
-                    <ButtonLink href={`/produkt/${r.product.slug}`} variant="outline" size="sm">
-                      Details
-                    </ButtonLink>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setSelected(i)}
-                    className={`text-left text-sm font-semibold ${active ? "text-lime-deep" : "text-muted hover:text-ink"}`}
-                  >
-                    {active ? "● In der Simulation" : "○ In der Simulation zeigen"}
-                  </button>
-                </div>
-              </div>
+                <span className="block h-1 overflow-hidden rounded-full bg-mist">
+                  <span
+                    className={`block h-full rounded-full transition-[width,background-color] duration-700 ease-[var(--ease-out-expo)] ${current ? "bg-sun-2" : "bg-ink"}`}
+                    style={{ width: done ? "100%" : current ? "45%" : "0%" }}
+                  />
+                </span>
+                <span className={`hidden items-center gap-1.5 truncate text-xs sm:flex md:text-sm ${current ? "font-semibold text-ink" : done ? "text-ink group-enabled:group-hover:underline" : "text-muted"}`}>
+                  <span className="font-mono text-[11px] text-muted">{String(i + 1).padStart(2, "0")}</span>
+                  <span>{title}</span>
+                  <span className="sr-only">{done ? " (erledigt)" : current ? " (aktuell)" : ""}</span>
+                  {done && <Icon name="check" size={14} className="hidden text-lime-deep sm:inline" />}
+                </span>
+              </button>
             </li>
           );
         })}
-      </ul>
+      </ol>
+    </nav>
+  );
+}
 
-      {extras.length > 0 && (
-        <div className="mx-5 mb-2 flex flex-wrap items-center gap-3 rounded-2xl bg-paper p-4 md:mx-8">
-          <p className="text-sm font-semibold">Passendes Zubehör:</p>
-          {extras.map((p) => (
-            <Link key={p.id} href={`/produkt/${p.slug}`} className="chip border border-line bg-white text-ink hover:border-ink">
-              {p.name}
-            </Link>
-          ))}
-        </div>
+/* ---------------- Schritt-Rahmen ---------------- */
+
+function StepFrame({
+  index,
+  question,
+  help,
+  children,
+  aside,
+  focus,
+  canNext,
+  onBack,
+  onNext,
+  nextLabel = "Weiter",
+}: {
+  index: number;
+  question: string;
+  help: string;
+  children: ReactNode;
+  aside?: ReactNode;
+  focus: boolean;
+  canNext: boolean;
+  onBack?: () => void;
+  onNext: () => void;
+  nextLabel?: string;
+}) {
+  const heading = useRef<HTMLHeadingElement>(null);
+  // Fokus nur beim Wechsel in einen neuen Schritt setzen – nicht während man
+  // im aktuellen Schritt noch mit den Pfeiltasten auswählt.
+  const focusOnMount = useRef(focus);
+  useEffect(() => {
+    if (focusOnMount.current) heading.current?.focus({ preventScroll: true });
+  }, []);
+  const headingId = `cfg-step-${index}`;
+  const footer = (
+    <div className="mt-5 flex items-center justify-between gap-4 md:mt-7">
+      {onBack ? (
+        <button type="button" onClick={onBack} className="inline-flex items-center gap-2 rounded-full px-1 py-2 text-sm font-semibold text-muted hover:text-ink">
+          <Icon name="arrow-right" size={16} className="rotate-180" />
+          Zurück
+        </button>
+      ) : (
+        <span className="text-sm text-muted">Drei Fragen, etwa eine Minute.</span>
       )}
-
-      {/* Simulation */}
-      <section aria-labelledby="sim-title" className="on-dark m-3 mt-6 rounded-[24px] bg-ink-2 p-5 text-paper md:m-4 md:p-8">
-        <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-          <div>
-            <p className="eyebrow">Stromersparnis-Simulation</p>
-            <h3 id="sim-title" className="display-md mt-2 text-2xl md:text-3xl">
-              {rec.product.name}
-            </h3>
+      <Button variant="dark" onClick={onNext} disabled={!canNext} arrow>
+        {nextLabel}
+      </Button>
+    </div>
+  );
+  return (
+    <div className="px-5 py-6 md:px-10 md:py-10">
+      <div className={aside ? "grid gap-8 lg:grid-cols-12 lg:gap-12" : ""}>
+        <div className={aside ? "lg:col-span-6" : ""}>
+          <p className="t-label m-0">Frage {index + 1} von 3</p>
+          <h3 id={headingId} ref={heading} tabIndex={-1} className="t-h2 mb-0 mt-3 outline-none">
+            {question}
+          </h3>
+          <p className="mb-5 mt-3 max-w-[58ch] text-muted md:mb-7">{help}</p>
+          <div role="group" aria-labelledby={headingId}>
+            {children}
           </div>
-          <p className="text-sm text-muted-dark">
-            {solarAssumptions.orientation[orientation].label} · {solarAssumptions.mounting[locationToMounting[answers.location]].label}
-          </p>
+          {footer}
         </div>
-
-        <dl className="mt-8 grid grid-cols-2 gap-px overflow-hidden rounded-2xl bg-ink-line lg:grid-cols-4">
-          <Stat label="Geschätzte Jahresproduktion" value={<CountUp value={Math.round(sim.annualKWh)} suffix=" kWh" />} note="im ersten Jahr" />
-          <Stat
-            label="Geschätzte Ersparnis pro Jahr"
-            value={<CountUp value={Math.round(sim.firstYearSavingsEUR)} suffix=" €" />}
-            note={`bei ${formatNumber(assumptions.electricityPriceCt, 0)} ct/kWh`}
-            highlight
-          />
-          <Stat
-            label="Geschätzte Amortisation"
-            value={sim.paybackYears !== null ? <CountUp value={sim.paybackYears} decimals={1} suffix=" Jahre" /> : "–"}
-            note={hasPrice(rec.product) ? `bei ${formatEUR(rec.product.price, { round: true })} Anschaffung` : "Preis folgt (Demo-Produkt)"}
-          />
-          <Stat
-            label={`Ersparnis in ${assumptions.years} Jahren`}
-            value={<CountUp value={Math.round(sim.totalSavingsEUR)} suffix=" €" />}
-            note="vor Abzug der Anschaffung"
-          />
-        </dl>
-
-        <div className="mt-8 grid gap-8 lg:grid-cols-[1.4fr_1fr]">
-          <div className="min-w-0">
-            <p className="mb-3 font-semibold">Bilanz über {assumptions.years} Jahre</p>
-            <CashflowChart data={sim.cashflow} paybackYears={sim.paybackYears} />
-          </div>
-          <div className="min-w-0">
-            <p className="mb-3 font-semibold">Ertrag je Monat</p>
-            <MonthlyChart values={sim.monthlyKWh} />
-            <p className="mt-3 text-sm text-muted-dark">
-              Davon nutzt du etwa <strong className="text-paper">{formatInt(sim.selfUsedKWh)} kWh</strong> selbst
-              {sim.feedInKWh > 1 && (
-                <>
-                  , rund <strong className="text-paper">{formatInt(sim.feedInKWh)} kWh</strong> fließen ins Netz
-                </>
-              )}
-              .{sim.clippingLoss > 0 && ` Durch die 800-W-Grenze gehen etwa ${formatNumber(sim.clippingLoss * 100, 0)} % des Ertrags verloren.`}
-            </p>
-          </div>
-        </div>
-
-        <AssumptionsPanel value={assumptions} onChange={setAssumptions} />
-      </section>
+        {aside && <div className="lg:col-span-6">{aside}</div>}
+      </div>
     </div>
   );
 }
 
-function Stat({ label, value, note, highlight }: { label: string; value: ReactNode; note: string; highlight?: boolean }) {
+/* ---------------- Auswahl: Ort (Bildkarten) ---------------- */
+
+function PlaceChoice({ value, onChange }: { value?: Place; onChange: (v: Place, advance: boolean) => void }) {
+  const pointer = useRef(false);
   return (
-    <div className="bg-ink-2 p-5">
-      <dt className="text-sm text-muted-dark">{label}</dt>
-      <dd className={`mt-2 font-sans text-3xl font-bold md:text-4xl ${highlight ? "text-lime" : "text-paper"}`}>{value}</dd>
-      <dd className="mt-1 text-xs text-muted-dark">{note}</dd>
+    <div className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4">
+      {placeOptions.map((o, i) => {
+        const checked = value === o.value;
+        const inputId = `cfg-place-${o.value}`;
+        return (
+          <label
+            key={o.value}
+            htmlFor={inputId}
+            onPointerDown={() => (pointer.current = true)}
+            onClick={() => {
+              // Klick auf die bereits gewählte Karte: weiter wie bei einer neuen Wahl
+              if (checked && pointer.current) {
+                pointer.current = false;
+                onChange(o.value, true);
+              }
+            }}
+            className={`group relative flex cursor-pointer flex-col overflow-hidden rounded-[20px] border bg-white transition-[border-color,box-shadow,transform] duration-300 ease-[var(--ease-out-expo)] hover:-translate-y-0.5 has-[:focus-visible]:ring-4 has-[:focus-visible]:ring-sun-1/60 ${
+              checked ? "border-ink shadow-[0_0_0_1px_var(--color-ink)]" : "border-line hover:border-ink/30"
+            }`}
+            style={{ animation: `page-in 0.6s var(--ease-out-expo) ${i * 60}ms both` }}
+          >
+            <input
+              id={inputId}
+              type="radio"
+              name="cfg-place"
+              className="sr-only"
+              checked={checked}
+              onChange={() => {
+                onChange(o.value, pointer.current);
+                pointer.current = false;
+              }}
+              onKeyDown={(e) => {
+                pointer.current = false;
+                if (e.key === "Enter") onChange(o.value, true);
+              }}
+            />
+            <span className="relative block aspect-[3/2] max-w-full overflow-hidden sm:aspect-[4/3]">
+              <PlaceScene place={o.value} className="h-full w-full transition-transform duration-700 ease-[var(--ease-out-expo)] group-hover:scale-[1.04]" />
+            </span>
+            <span className="flex items-start gap-2 px-3.5 py-3 md:px-4 md:py-3.5">
+              <span className="min-w-0 flex-1">
+                <span className="block font-semibold md:text-lg">{o.label}</span>
+                <span className="mt-0.5 block text-xs text-muted md:text-sm">{o.hint}</span>
+              </span>
+              <Check checked={checked} />
+            </span>
+          </label>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ---------------- Auswahl: Text-Karten ---------------- */
+
+function ChoiceGroup<V extends string>({
+  name,
+  options,
+  value,
+  columns,
+  onChange,
+}: {
+  name: string;
+  options: ChoiceOption<V>[];
+  value?: V;
+  columns: 1 | 2;
+  onChange: (v: V, advance: boolean) => void;
+}) {
+  const pointer = useRef(false);
+  return (
+    <div className={`grid gap-3 ${columns === 2 ? "sm:grid-cols-2" : ""}`}>
+      {options.map((o, i) => {
+        const checked = value === o.value;
+        const inputId = `cfg-${name}-${o.value}`;
+        return (
+          <label
+            key={o.value}
+            htmlFor={inputId}
+            onPointerDown={() => (pointer.current = true)}
+            onClick={() => {
+              if (checked && pointer.current) {
+                pointer.current = false;
+                onChange(o.value, true);
+              }
+            }}
+            className={`relative flex cursor-pointer items-center gap-3 rounded-[20px] border px-4 py-3.5 transition-[border-color,background-color,color] duration-300 has-[:focus-visible]:ring-4 has-[:focus-visible]:ring-sun-1/60 sm:gap-4 sm:py-4 md:p-5 ${
+              checked ? "border-ink bg-ink text-paper" : "border-line bg-white hover:border-ink/30"
+            }`}
+            style={{ animation: `page-in 0.6s var(--ease-out-expo) ${i * 60}ms both` }}
+          >
+            <input
+              id={inputId}
+              type="radio"
+              name={`cfg-${name}`}
+              className="sr-only"
+              checked={checked}
+              onChange={() => {
+                onChange(o.value, pointer.current);
+                pointer.current = false;
+              }}
+              onKeyDown={(e) => {
+                pointer.current = false;
+                if (e.key === "Enter") onChange(o.value, true);
+              }}
+            />
+            <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-full sm:h-12 sm:w-12 ${checked ? "bg-paper/10 text-sun-1" : "bg-stone text-ink"}`}>
+              <Icon name={o.icon as IconName} size={22} />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block font-semibold md:text-[17px]">{o.label}</span>
+              <span className={`mt-0.5 block text-sm ${checked ? "text-paper/70" : "text-muted"}`}>{o.hint}</span>
+            </span>
+            <span
+              aria-hidden
+              className={`grid h-5 w-5 shrink-0 place-items-center rounded-full border transition-colors sm:h-6 sm:w-6 ${checked ? "border-sun-1 bg-sun-1 text-ink" : "border-line"}`}
+            >
+              {checked && <Icon name="check" size={14} strokeWidth={2.4} />}
+            </span>
+          </label>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Auswahl-Kreis, gleich wie bei den Text-Karten */
+function Check({ checked }: { checked: boolean }) {
+  return (
+    <span
+      aria-hidden
+      className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full border transition-colors duration-300 sm:h-6 sm:w-6 ${
+        checked ? "border-ink bg-ink text-sun-1" : "border-line text-transparent"
+      }`}
+    >
+      <Icon name="check" size={13} strokeWidth={2.4} />
+    </span>
+  );
+}
+
+/* ---------------- Visualisierung Schritt 2 ---------------- */
+
+function IndependenceVisual({ value }: { value?: Independence }) {
+  const [shown, setShown] = useState<"ohne" | "speicher">(value === "speicher" ? "speicher" : "ohne");
+  useEffect(() => {
+    if (value === "speicher" || value === "ohne") setShown(value);
+  }, [value]);
+  return (
+    <div className="rounded-[24px] bg-stone p-5 md:p-7">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="m-0 font-semibold">So verteilt sich dein Solarstrom über den Tag</p>
+        <div className="inline-flex rounded-full bg-white p-1" role="group" aria-label="Tagesverlauf zeigen">
+          {(["ohne", "speicher"] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              aria-pressed={shown === m}
+              onClick={() => setShown(m)}
+              className={`rounded-full px-3.5 py-1.5 text-sm font-semibold transition-colors ${shown === m ? "bg-ink text-paper" : "text-muted hover:text-ink"}`}
+            >
+              {m === "ohne" ? "Ohne Speicher" : "Mit Speicher"}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="mt-5">
+        <DayCurve mode={shown} />
+      </div>
+      <p className="mt-4 text-sm text-muted">
+        {shown === "speicher"
+          ? "Der Überschuss vom Mittag lädt den Speicher. Am Abend versorgt er Licht, Fernseher und Kühlschrank."
+          : "Mittags erzeugst du oft mehr, als du verbrauchst. Dieser Teil fließt ins Netz, meist ohne Vergütung."}{" "}
+        Schematische Darstellung eines sonnigen Tages.
+      </p>
     </div>
   );
 }

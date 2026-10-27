@@ -7,7 +7,7 @@ export interface Crumb {
 }
 
 /** Brotkrumen-Navigation mit strukturierten Daten (BreadcrumbList) */
-export function Breadcrumbs({ items }: { items: Crumb[] }) {
+export function Breadcrumbs({ items, tone = "light" }: { items: Crumb[]; tone?: "light" | "dark" }) {
   const all: Crumb[] = [{ label: "Start", href: "/" }, ...items];
   const jsonLd = {
     "@context": "https://schema.org",
@@ -19,26 +19,27 @@ export function Breadcrumbs({ items }: { items: Crumb[] }) {
       ...(c.href ? { item: new URL(c.href, site.url).toString() } : {}),
     })),
   };
+  const dark = tone === "dark";
   return (
-    <nav aria-label="Brotkrumen" className="text-sm">
-      <ol className="flex flex-wrap items-center gap-x-2 gap-y-1 text-muted">
+    <nav aria-label="Brotkrumen" className="text-[13px]">
+      <ol className={`flex flex-wrap items-center gap-x-2 gap-y-1 ${dark ? "text-muted-dark" : "text-muted"}`}>
         {all.map((c, i) => {
           const last = i === all.length - 1;
           return (
-            <li key={`${c.label}-${i}`} className="flex items-center gap-2">
+            <li key={`${c.label}-${i}`} className="flex min-w-0 items-center gap-2">
               {c.href && !last ? (
-                <Link href={c.href} className="hover:text-ink hover:underline underline-offset-4">
+                <Link href={c.href} className={`underline-offset-4 hover:underline ${dark ? "hover:text-paper" : "hover:text-ink"}`}>
                   {c.label}
                 </Link>
               ) : (
-                <span aria-current={last ? "page" : undefined} className={last ? "text-ink" : ""}>
+                <span aria-current={last ? "page" : undefined} className={`truncate ${last ? (dark ? "text-paper" : "text-ink") : ""}`}>
                   {c.label}
                 </span>
               )}
               {!last && (
-                <svg viewBox="0 0 16 16" className="h-3 w-3 opacity-50" aria-hidden>
-                  <path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
+                <span aria-hidden className="opacity-40">
+                  /
+                </span>
               )}
             </li>
           );

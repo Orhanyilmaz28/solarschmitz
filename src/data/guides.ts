@@ -8,6 +8,8 @@ export interface Guide {
   category: string;
   visual: VisualKey;
   sections: { heading: string; body: string[] }[];
+  /** Stand des Textes, z. B. „Oktober 2026“ */
+  updated?: string;
 }
 
 export const guides: Guide[] = [
@@ -16,6 +18,7 @@ export const guides: Guide[] = [
     title: "Balkonkraftwerk anmelden: Schritt für Schritt",
     excerpt:
       "Die Anmeldung im Marktstammdatenregister ist kostenlos und in wenigen Minuten erledigt. So gehst du vor und diese Angaben brauchst du.",
+    updated: "Oktober 2026",
     readingMinutes: 4,
     category: "Recht & Anmeldung",
     visual: "meter",
@@ -55,6 +58,7 @@ export const guides: Guide[] = [
     title: "800 W und 2.000 Wp: Was das Solarpaket I erlaubt",
     excerpt:
       "Seit 2024 gelten neue Grenzen für Steckersolargeräte. Wir erklären den Unterschied zwischen Wechselrichter- und Modulleistung und was das für deine Planung bedeutet.",
+    updated: "Oktober 2026",
     readingMinutes: 5,
     category: "Recht & Anmeldung",
     visual: "kit-4",
@@ -76,7 +80,7 @@ export const guides: Guide[] = [
       {
         heading: "Was das für deine Planung heißt",
         body: [
-          "Für ein Balkongeländer sind zwei Module üblich, weil Platz und Gewicht begrenzt sind. Im Garten oder auf dem Flachdach lassen sich auch vier Module aufstellen, solange die Summe unter 2.000 Wp bleibt.",
+          "Für ein Balkongeländer sind zwei Module üblich, weil Platz und Gewicht begrenzt sind. Im Garten oder auf dem Flachdach lassen sich auch vier Module aufstellen, solange die Summe höchstens 2.000 Wp beträgt.",
           "Achte darauf, dass der Wechselrichter für die gewählte Modulleistung ausgelegt ist. Die maximale Eingangsleistung je Eingang steht im Datenblatt.",
         ],
       },
@@ -87,6 +91,7 @@ export const guides: Guide[] = [
     title: "Lohnt sich ein Speicher am Balkonkraftwerk?",
     excerpt:
       "Ein Speicher erhöht den Anteil Solarstrom, den du selbst nutzt. Ob sich das rechnet, hängt vor allem von deinem Verbrauch am Tag ab.",
+    updated: "Oktober 2026",
     readingMinutes: 6,
     category: "Speicher",
     visual: "kit-2-storage",
@@ -119,6 +124,7 @@ export const guides: Guide[] = [
     title: "Ausrichtung und Neigung: So holst du den meisten Ertrag",
     excerpt:
       "Süd, Ost-West oder senkrecht am Geländer? So wirken sich Himmelsrichtung, Neigung und Schatten auf den Ertrag deiner Module aus.",
+    updated: "Oktober 2026",
     readingMinutes: 5,
     category: "Technik",
     visual: "mount-flat",
@@ -134,7 +140,7 @@ export const guides: Guide[] = [
         heading: "Neigung",
         body: [
           "Ideal ist eine Neigung von etwa 30°. Senkrecht am Balkongeländer montierte Module verlieren gegenüber dieser Ideallage merklich an Jahresertrag, liefern aber im Winter bei tief stehender Sonne vergleichsweise gut.",
-          "Aufständerungen für Flachdach und Garten erlauben meist eine Neigung zwischen 20° und 35°.",
+          "Auf dem Flachdach oder im Garten hilft eine Aufständerung. Viele Halterungen lassen sich im Winkel verstellen, den möglichen Bereich nennt das Datenblatt.",
         ],
       },
       {
@@ -151,6 +157,7 @@ export const guides: Guide[] = [
     title: "Balkonkraftwerk als Mieter: Deine Rechte",
     excerpt:
       "Seit Oktober 2024 haben Mieter und Wohnungseigentümer einen Anspruch auf Zustimmung zu einem Steckersolargerät. Was das konkret bedeutet.",
+    updated: "Oktober 2026",
     readingMinutes: 4,
     category: "Recht & Anmeldung",
     visual: "mount-rail",

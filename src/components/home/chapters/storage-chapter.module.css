@@ -1,0 +1,365 @@
+/*
+  Kapitel 3 – Speicher und Energiefluss
+  Mit Bewegung: hohe Spur mit klebender Bühne, Fortschritt per ScrollTrigger.
+  Ohne Bewegung (kein JS, „Bewegung reduzieren“): normale Höhe, alles sichtbar.
+*/
+
+.track {
+  position: relative;
+}
+:global(html[data-motion="on"]) .track {
+  height: 330vh;
+}
+
+.stage {
+  position: relative;
+  padding-top: var(--space-section);
+  padding-bottom: var(--space-block);
+  /* Lichtstimmungen ragen über das Bild hinaus: seitlich abschneiden */
+  overflow-x: hidden;
+  overflow-x: clip;
+}
+:global(html[data-motion="on"]) .stage {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  height: 100svh;
+  overflow: hidden;
+  padding-block: 0;
+  padding-top: calc(76px + env(safe-area-inset-top, 0px));
+  padding-bottom: max(20px, env(safe-area-inset-bottom, 0px));
+  display: flex;
+  align-items: center;
+}
+
+@media (max-width: 1023px) {
+  :global(html[data-motion="on"]) .track {
+    height: 280svh;
+  }
+  :global(html[data-motion="on"]) .stage {
+    align-items: stretch;
+    padding-top: calc(72px + env(safe-area-inset-top, 0px));
+  }
+}
+
+/* ---------- Bild ---------- */
+
+.figure {
+  position: relative;
+  margin: 0;
+}
+
+.art {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1000 / 760;
+  margin-inline: auto;
+}
+@media (min-width: 1024px) {
+  .art {
+    width: min(100%, calc((100svh - 150px) * 1.3158));
+  }
+}
+@media (max-width: 1023px) {
+  :global(html[data-motion="on"]) .art {
+    width: min(100%, calc((100svh - 510px) * 1.3158));
+    min-width: 260px;
+  }
+}
+
+/* Lichtstimmungen hinter der Szene (Deckkraft setzt das Skript) */
+.sky {
+  position: absolute;
+  inset: -14% -10% -6%;
+  pointer-events: none;
+}
+/* closest-side: Verlauf endet sicher innerhalb der Fläche, keine sichtbaren Kanten */
+.skyDay {
+  background:
+    radial-gradient(closest-side at 58% 36%, rgb(98 150 196 / 0.3), rgb(98 150 196 / 0.08) 55%, transparent),
+    radial-gradient(closest-side at 50% 30%, rgb(64 112 150 / 0.12), transparent);
+}
+.skyDusk {
+  background:
+    radial-gradient(closest-side at 50% 40%, rgb(255 150 70 / 0.3), rgb(226 102 42 / 0.08) 60%, transparent),
+    radial-gradient(closest-side at 50% 50%, rgb(226 102 42 / 0.1), transparent);
+}
+.skyNight {
+  background: radial-gradient(closest-side at 56% 34%, rgb(110 132 190 / 0.16), rgb(110 132 190 / 0.04) 60%, transparent);
+}
+
+/* Bewegte Energie: runde Punkte entlang der Flüsse */
+.art :global([data-k3="dots"]) {
+  stroke-dasharray: 0 1;
+}
+:global(html[data-motion="on"]) .art :global([data-k3="dots"]) {
+  animation: k3-flow 0.3s linear infinite;
+}
+/* Außerhalb des Sichtbereichs anhalten (spart Neuzeichnen) */
+.stage[data-run="0"] .art :global([data-k3="dots"]) {
+  animation-play-state: paused;
+}
+.art :global([data-flow]) {
+  transition: opacity 0.35s ease;
+}
+@keyframes k3-flow {
+  to {
+    stroke-dashoffset: -1;
+  }
+}
+
+/* Sonnenbogen */
+.arc {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+/* Uhr */
+.clock {
+  position: absolute;
+  left: 0;
+  top: 1%;
+  pointer-events: none;
+}
+.clockTime {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  font-size: clamp(1.4rem, 3.2vw, 3rem);
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 639px) {
+  .clock :global(.t-label) {
+    font-size: 9px;
+    letter-spacing: 0.12em;
+  }
+}
+
+/* Beschriftungen an der Szene */
+.callout {
+  position: absolute;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+.calloutDot {
+  position: absolute;
+  left: -4px;
+  top: -4px;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--color-paper);
+  box-shadow: 0 0 0 3px rgb(10 15 20 / 0.85);
+}
+.calloutBox {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  white-space: nowrap;
+  padding: 8px 11px 9px;
+  border-radius: 12px;
+  border: 1px solid rgb(248 250 247 / 0.12);
+  background: rgb(10 15 20 / 0.72);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.calloutBox::before {
+  content: "";
+  position: absolute;
+  background: rgb(248 250 247 / 0.35);
+}
+.calloutName {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-muted-dark);
+}
+.calloutValue {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 19px;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  color: var(--color-paper);
+  font-variant-numeric: tabular-nums;
+}
+.calloutSub {
+  font-size: 12px;
+  line-height: 1.2;
+  color: rgb(248 250 247 / 0.62);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Richtung der Beschriftung relativ zum Ankerpunkt (Leitlinie 18 px) */
+.right .calloutBox {
+  left: 22px;
+  top: 0;
+  transform: translateY(-50%);
+}
+.right .calloutBox::before {
+  left: -19px;
+  top: 50%;
+  width: 18px;
+  height: 1px;
+}
+.left .calloutBox {
+  right: 22px;
+  top: 0;
+  transform: translateY(-50%);
+}
+.left .calloutBox::before {
+  right: -19px;
+  top: 50%;
+  width: 18px;
+  height: 1px;
+}
+.up .calloutBox {
+  left: 0;
+  bottom: 22px;
+  transform: translateX(-50%);
+}
+.up .calloutBox::before {
+  left: 50%;
+  bottom: -19px;
+  width: 1px;
+  height: 18px;
+}
+
+@media (max-width: 639px) {
+  .calloutBox {
+    padding: 5px 8px 6px;
+    border-radius: 9px;
+    gap: 1px;
+  }
+  .calloutName {
+    font-size: 8.5px;
+    letter-spacing: 0.1em;
+  }
+  .calloutValue {
+    font-size: 14px;
+  }
+  .calloutSub {
+    display: none;
+  }
+  .right .calloutBox {
+    left: 14px;
+  }
+  .right .calloutBox::before {
+    left: -11px;
+    width: 10px;
+  }
+  .left .calloutBox {
+    right: 14px;
+  }
+  .left .calloutBox::before {
+    right: -11px;
+    width: 10px;
+  }
+  .up .calloutBox {
+    bottom: 14px;
+  }
+  .up .calloutBox::before {
+    bottom: -11px;
+    height: 10px;
+  }
+}
+
+/* ---------- Text ---------- */
+
+.beats {
+  display: grid;
+  gap: 2.25rem;
+}
+:global(html[data-motion="on"]) .beats {
+  gap: 0;
+  grid-template-areas: "beat";
+}
+:global(html[data-motion="on"]) .beat {
+  grid-area: beat;
+  opacity: 0;
+  transform: translate3d(0, 18px, 0);
+  transition:
+    opacity 0.55s var(--ease-out-expo),
+    transform 0.8s var(--ease-out-expo);
+  pointer-events: none;
+}
+:global(html[data-motion="on"]) .beat[data-active="true"] {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+
+.fact {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 999px;
+  border: 1px solid rgb(248 250 247 / 0.14);
+  padding: 5px 12px 5px 10px;
+  font-size: 13px;
+  line-height: 1.2;
+  color: rgb(248 250 247 / 0.86);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.factDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+/* Fortschritt der drei Abschnitte, nur mit Bewegung */
+.progress {
+  display: none;
+}
+:global(html[data-motion="on"]) .progress {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+.progressBar {
+  height: 2px;
+  border-radius: 2px;
+  background: rgb(248 250 247 / 0.14);
+  overflow: hidden;
+}
+.progressFill {
+  height: 100%;
+  background: var(--sun-gradient);
+  transform-origin: 0 50%;
+  transform: scaleX(0);
+}
+
+/* Kurze Bildschirme: Text kompakter */
+@media (max-width: 1023px) {
+  .beatBody {
+    font-size: 15px;
+    line-height: 1.5;
+  }
+}
+@media (max-width: 1023px) and (max-height: 760px) {
+  :global(html[data-motion="on"]) .beatBody {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  :global(html[data-motion="on"]) .facts {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .art :global([data-k3="dots"]) {
+    animation: none !important;
+  }
+}

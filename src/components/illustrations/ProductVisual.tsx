@@ -12,8 +12,13 @@ interface Props {
   title?: string;
 }
 
-export function ProductVisual({ visual, className, title }: Props) {
+export function ProductVisual(props: Props) {
   const uid = useId().replace(/:/g, "");
+  return <VisualSvg {...props} uid={uid} />;
+}
+
+/** Reine Zeichnung ohne Hooks (auch für die statischen SVG-Dateien unter /art/visual) */
+export function VisualSvg({ visual, className, title, uid }: Props & { uid: string }) {
   const ids = {
     cell: `cell-${uid}`,
     cellBlack: `cellb-${uid}`,

@@ -19,7 +19,7 @@ export default function RegisterPage() {
         footer={
           <p>
             Schon registriert?{" "}
-            <Link href="/konto/anmelden" className="font-semibold underline decoration-lime decoration-2 underline-offset-4">
+            <Link href="/konto/anmelden" className="font-semibold underline decoration-ink/25 underline-offset-4 hover:decoration-ink">
               Anmelden
             </Link>
           </p>

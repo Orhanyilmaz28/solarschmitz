@@ -3,6 +3,8 @@ export interface FaqItem {
   question: string;
   answer: string;
   category: "technik" | "recht" | "bestellung" | "speicher";
+  /** Weiterführende Seiten, werden unter der Antwort verlinkt */
+  links?: { href: string; label: string }[];
 }
 
 export const faqCategoryLabels: Record<FaqItem["category"], string> = {
@@ -12,6 +14,10 @@ export const faqCategoryLabels: Record<FaqItem["category"], string> = {
   bestellung: "Bestellung & Versand",
 };
 
+/**
+ * Häufige Fragen. Die ersten sechs erscheinen auch auf der Startseite.
+ * Rechtliche Angaben: Stand Oktober 2026, vor Livegang prüfen lassen.
+ */
 export const faqItems: FaqItem[] = [
   {
     id: "leistung",
@@ -32,7 +38,7 @@ export const faqItems: FaqItem[] = [
     category: "technik",
     question: "Kann ich das Balkonkraftwerk an eine normale Steckdose anschließen?",
     answer:
-      "Steckersolargeräte bis 800 W dürfen über einen herkömmlichen Schuko-Stecker an eine Haushaltssteckdose angeschlossen werden. Wichtig ist eine intakte, fest installierte Steckdose. Verwende keine Mehrfachsteckdosen oder Verlängerungen mit weiteren Verbrauchern. Wenn du unsicher bist, ob deine Elektroinstallation geeignet ist, lass sie von einer Elektrofachkraft prüfen.",
+      "Steckerfertige Sets bis 800 W werden in der Regel mit Schuko-Stecker geliefert und an eine fest installierte Haushaltssteckdose angeschlossen. Die Steckdose muss intakt sein. Schließ das Gerät nicht über Mehrfachsteckdosen oder Verlängerungen mit weiteren Verbrauchern an. Wenn du unsicher bist, ob deine Elektroinstallation geeignet ist, lass sie von einer Elektrofachkraft prüfen.",
   },
   {
     id: "mieter",
@@ -44,16 +50,17 @@ export const faqItems: FaqItem[] = [
   {
     id: "mwst",
     category: "recht",
-    question: "Warum zahle ich 0 % Mehrwertsteuer?",
+    question: "Wann gilt 0 % Umsatzsteuer?",
     answer:
-      "Für die Lieferung von Solarmodulen, Wechselrichtern und Speichern für Photovoltaikanlagen auf oder in der Nähe von Wohngebäuden gilt seit 2023 der Nullsteuersatz nach § 12 Abs. 3 UStG. Er gilt für Anlagen bis 30 kWp Bruttoleistung. Für Zubehör ohne direkten Anlagenbezug, etwa smarte Steckdosen, kann der reguläre Steuersatz anfallen. Den gültigen Satz siehst du bei jedem Produkt.",
+      "Für Solarmodule, Wechselrichter, Speicher und die wesentlichen Komponenten einer Photovoltaikanlage gilt seit 2023 der Nullsteuersatz nach § 12 Abs. 3 UStG. Voraussetzung: Du kaufst als Betreiberin oder Betreiber der Anlage, und sie wird auf oder in der Nähe eines Wohngebäudes installiert (oder eines öffentlichen oder gemeinnützig genutzten Gebäudes). Bei Anlagen bis 30 kWp laut Marktstammdatenregister gilt die Voraussetzung zum Standort als erfüllt. An der Kasse fragen wir ab, ob das auf dich zutrifft. Wenn nicht, berechnen wir 19 % Umsatzsteuer. Zubehör ohne direkten Anlagenbezug, etwa smarte Steckdosen, kostet immer 19 %. Den Steuersatz siehst du bei jedem Produkt.",
   },
   {
     id: "speicher-nutzen",
     category: "speicher",
     question: "Lohnt sich ein Speicher für mein Balkonkraftwerk?",
     answer:
-      "Ein Speicher lohnt sich vor allem, wenn du tagsüber wenig Strom verbrauchst. Ohne Speicher fließt Solarstrom, den du gerade nicht nutzt, unvergütet ins Netz. Mit Speicher steht er dir am Abend zur Verfügung. Dafür kostet das Set mehr, und die Amortisation dauert oft länger. Unser Produktfinder rechnet beide Varianten mit deinen eigenen Annahmen durch.",
+      "Ein Speicher lohnt sich vor allem, wenn du tagsüber wenig Strom verbrauchst. Ohne Speicher fließt Solarstrom, den du gerade nicht nutzt, in der Regel unvergütet ins Netz. Mit Speicher steht er dir am Abend zur Verfügung. Dafür kostet das Set mehr, und die Amortisation dauert oft länger. Unser Produktfinder rechnet beide Varianten mit deinen eigenen Annahmen durch.",
+    links: [{ href: "/konfigurator", label: "Produktfinder starten" }],
   },
   {
     id: "speicher-nachruesten",
@@ -61,6 +68,21 @@ export const faqItems: FaqItem[] = [
     question: "Kann ich einen Speicher später nachrüsten?",
     answer:
       "Ja. AC-gekoppelte Speicher werden über die Steckdose angeschlossen und funktionieren mit vielen bestehenden Balkonkraftwerken. Andere Speicher werden zwischen Module und Wechselrichter gesetzt. Prüfe in den technischen Daten, welche Variante zu deiner Anlage passt, oder frag uns.",
+    links: [{ href: "/kategorie/batteriespeicher", label: "Batteriespeicher ansehen" }],
+  },
+  {
+    id: "stromausfall",
+    category: "speicher",
+    question: "Liefert mein Balkonkraftwerk bei einem Stromausfall Strom?",
+    answer:
+      "Nicht ins Hausnetz. Der Wechselrichter schaltet sich bei einem Netzausfall automatisch ab, damit im Netz keine Spannung anliegt. Manche Speicher haben eine eigene Steckdose, an der du Geräte auch ohne Netz betreiben kannst. Ob ein Gerät das kann, steht in seinen technischen Daten.",
+  },
+  {
+    id: "zaehler",
+    category: "technik",
+    question: "Brauche ich einen neuen Stromzähler?",
+    answer:
+      "Nicht vor der Inbetriebnahme. Seit dem Solarpaket I darfst du dein Balkonkraftwerk übergangsweise auch an einem älteren Zähler ohne Rücklaufsperre betreiben, bis dein Messstellenbetreiber ihn gegen einen digitalen Zähler tauscht. Du meldest die Anlage im Marktstammdatenregister an, den Zählertausch organisiert der Messstellenbetreiber.",
   },
   {
     id: "ausrichtung",
@@ -68,13 +90,15 @@ export const faqItems: FaqItem[] = [
     question: "Welche Ausrichtung bringt den meisten Ertrag?",
     answer:
       "Am meisten Strom liefert eine Südausrichtung mit etwa 30° Neigung. Ost- und Westausrichtungen bringen etwas weniger Jahresertrag, verteilen ihn aber besser über den Tag. Senkrecht am Balkongeländer montierte Module erzeugen spürbar weniger als aufgeständerte. Verschattung durch Bäume, Nachbargebäude oder Balkonbrüstungen mindert den Ertrag stark.",
+    links: [{ href: "/ratgeber", label: "Mehr im Ratgeber" }],
   },
   {
     id: "versand",
     category: "bestellung",
     question: "Von wo wird meine Bestellung verschickt?",
     answer:
-      "Wir arbeiten mit ausgewählten Lieferanten zusammen, die deine Bestellung direkt an dich versenden. Wir halten keine eigenen Lagerbestände. Die Sendungsverfolgung bekommst du per E-Mail, sobald der Lieferant das Paket übergeben hat. Versandkosten und Lieferzeiten legen wir gerade mit unseren Lieferanten fest und zeigen sie vor der Bestellung transparent an.",
+      "Wir arbeiten mit ausgewählten Lieferanten zusammen, die deine Bestellung direkt an dich versenden. Wir halten keine eigenen Lagerbestände. Die Sendungsverfolgung bekommst du per E-Mail, sobald der Lieferant das Paket übergeben hat. Versandkosten und Lieferzeiten legen wir gerade mit unseren Lieferanten fest und zeigen sie vor der Bestellung an.",
+    links: [{ href: "/versand", label: "Versand und Lieferung" }],
   },
   {
     id: "widerruf",
@@ -82,6 +106,7 @@ export const faqItems: FaqItem[] = [
     question: "Kann ich meine Bestellung zurückgeben?",
     answer:
       "Als Verbraucherin oder Verbraucher hast du ein gesetzliches Widerrufsrecht von 14 Tagen ab Erhalt der Ware. Wie die Rücksendung abläuft, steht in der Widerrufsbelehrung.",
+    links: [{ href: "/widerruf", label: "Widerrufsbelehrung" }],
   },
   {
     id: "bestellen",
@@ -93,8 +118,12 @@ export const faqItems: FaqItem[] = [
   {
     id: "beratung",
     category: "bestellung",
-    question: "Ich bin unsicher, welches Set passt. Berätst du mich?",
+    question: "Ich bin unsicher, welches Set passt. Bekomme ich Beratung?",
     answer:
-      "Gern. Starte mit dem Produktfinder, er schlägt dir nach wenigen Fragen passende Produkte vor. Wenn du danach noch Fragen hast, schreib uns über das Kontaktformular. Nenne am besten Montageort, Ausrichtung und ungefähren Stromverbrauch, dann können wir gezielt antworten.",
+      "Ja. Starte mit dem Produktfinder, er schlägt dir nach wenigen Fragen passende Produkte vor. Wenn danach noch Fragen offen sind, ruf uns an oder schreib uns über das Kontaktformular. Nenne am besten Montageort, Ausrichtung und ungefähren Stromverbrauch, dann können wir gezielt antworten.",
+    links: [
+      { href: "/konfigurator", label: "Produktfinder" },
+      { href: "/kontakt", label: "Kontakt" },
+    ],
   },
 ];

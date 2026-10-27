@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { queryProducts } from "@/lib/catalog";
 import { categories } from "@/data/categories";
-import { ProductVisual } from "@/components/illustrations/ProductVisual";
+import { VisualImage } from "@/components/illustrations/VisualImage";
 import { PriceTag } from "@/components/shop/DataStatus";
 import { getLenis } from "@/components/motion/SmoothScroll";
 
@@ -129,7 +129,7 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
                   className={`grid grid-cols-[64px_1fr_auto] items-center gap-4 rounded-2xl p-2.5 ${i === active ? "bg-mist" : ""}`}
                 >
                   <span className="h-16 w-16 rounded-xl bg-white p-1">
-                    <ProductVisual visual={p.visual} className="h-full w-full" />
+                    <VisualImage visual={p.visual} className="h-full w-full" />
                   </span>
                   <span className="min-w-0">
                     <span className="block truncate font-semibold">{p.name}</span>

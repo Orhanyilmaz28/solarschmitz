@@ -115,11 +115,12 @@ function MarkShapes({ tone, animated, glow = false }: { tone: Tone; animated: bo
   );
 }
 
-type Variant = "lockup" | "signature" | "stacked";
+type Variant = "lockup" | "signature" | "stacked" | "monogram";
 
 function dataFor(variant: Variant) {
   if (variant === "signature" && logoData.signature) return logoData.signature;
   if (variant === "stacked") return logoData.stacked;
+  if (variant === "monogram") return logoData.monogram;
   return logoData.lockup;
 }
 
@@ -127,7 +128,7 @@ interface LogoProps {
   tone?: Tone;
   /** Höhe in px. Die Breite ergibt sich aus dem Seitenverhältnis. */
   height?: number;
-  /** signature = Sonnen-„o“ (Hauptlogo), lockup = Zeichen + Schrift, stacked = Zeichen über Schrift */
+  /** signature = Sonnen-„o“ (Hauptlogo), lockup = Zeichen + Schrift, stacked = Zeichen über Schrift, monogram = „S☀“ */
   variant?: Variant;
   animated?: boolean;
   className?: string;

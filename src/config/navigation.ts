@@ -1,13 +1,15 @@
 export interface NavLink {
   label: string;
   href: string;
+  /** in der Kopfzeile erst auf breiten Bildschirmen (ab 1400 px) zeigen */
+  wide?: boolean;
 }
 
 export const mainNav: NavLink[] = [
-  { label: "Produktfinder", href: "/konfigurator" },
+  { label: "Konfigurator", href: "/konfigurator" },
   { label: "Ratgeber", href: "/ratgeber" },
-  { label: "Über uns", href: "/ueber-uns" },
-  { label: "Kontakt", href: "/kontakt" },
+  { label: "Über uns", href: "/ueber-uns", wide: true },
+  { label: "Kontakt", href: "/kontakt", wide: true },
 ];
 
 export const footerNav: { title: string; links: NavLink[] }[] = [
@@ -26,7 +28,7 @@ export const footerNav: { title: string; links: NavLink[] }[] = [
   {
     title: "Beratung",
     links: [
-      { label: "Produktfinder", href: "/konfigurator" },
+      { label: "Konfigurator", href: "/konfigurator" },
       { label: "Produktvergleich", href: "/vergleich" },
       { label: "Ratgeber", href: "/ratgeber" },
       { label: "Häufige Fragen", href: "/faq" },

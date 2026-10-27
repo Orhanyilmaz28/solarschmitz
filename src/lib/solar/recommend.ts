@@ -1,116 +1,270 @@
 import type { InstallLocation, Product } from "@/lib/catalog/types";
 import { getAllProducts, hasPrice } from "@/lib/catalog";
+import { solarAssumptions, type MountingKey } from "@/config/solar-assumptions";
 import { formatEUR, formatKWh, formatWp } from "@/lib/format";
 
-export type StorageWish = "ja" | "nein" | "offen";
-export type ModuleCount = 1 | 2 | 4;
-export type PowerWish = "klein" | "mittel" | "gross";
+/* ------------------------------------------------------------------ */
+/* Antworten des Konfigurators                                          */
+/* ------------------------------------------------------------------ */
+
+/** Ort der Anlage (Schritt 1). „Hausdach“ entspricht der Montageart Schrägdach. */
+export type Place = "balkon" | "hausdach" | "flachdach" | "garten";
+/** Wunsch nach Unabhängigkeit (Schritt 2) */
+export type Independence = "ohne" | "speicher" | "unsicher";
+/** Was besonders wichtig ist (Schritt 3) */
+export type Priority = "preis" | "leistung" | "eigenversorgung" | "installation";
 
 export interface FinderAnswers {
-  location: InstallLocation;
-  storage: StorageWish;
-  modules: ModuleCount;
-  power: PowerWish;
-  /** Höchstbudget in Euro; null = egal */
-  budget: number | null;
+  place: Place;
+  independence: Independence;
+  priority: Priority;
 }
 
-export const powerRanges: Record<PowerWish, { label: string; min: number; max: number; hint: string }> = {
-  klein: { label: "bis 900 Wp", min: 0, max: 900, hint: "Für einen Balkon mit zwei Modulen" },
-  mittel: { label: "900–1.500 Wp", min: 900, max: 1500, hint: "Mehr Ertrag morgens und abends" },
-  gross: { label: "1.500–2.000 Wp", min: 1500, max: 2000, hint: "Die erlaubten 2.000 Wp ausnutzen" },
+export const placeToLocation: Record<Place, InstallLocation> = {
+  balkon: "balkon",
+  hausdach: "schraegdach",
+  flachdach: "flachdach",
+  garten: "garten",
 };
+
+export const placeToMounting: Record<Place, MountingKey> = {
+  balkon: "balkon",
+  hausdach: "schraegdach",
+  flachdach: "flachdach",
+  garten: "garten",
+};
+
+export const placeLabels: Record<Place, string> = {
+  balkon: "Balkon",
+  hausdach: "Hausdach",
+  flachdach: "Flachdach",
+  garten: "Garten",
+};
+
+export const independenceLabels: Record<Independence, string> = {
+  ohne: "Ohne Speicher",
+  speicher: "Mit Batteriespeicher",
+  unsicher: "Noch unsicher",
+};
+
+export const priorityLabels: Record<Priority, string> = {
+  preis: "Niedriger Einstiegspreis",
+  leistung: "Hohe Leistung",
+  eigenversorgung: "Maximale Eigenversorgung",
+  installation: "Einfache Installation",
+};
+
+/* ------------------------------------------------------------------ */
+/* Empfehlungen                                                         */
+/* ------------------------------------------------------------------ */
 
 export interface Recommendation {
   product: Product;
   score: number;
+  /** Gründe, warum das Produkt zu den Antworten passt */
   reasons: string[];
+  /** Ehrliche Einschränkungen */
   caveats: string[];
 }
 
-const setCategories = new Set(["balkonkraftwerke", "balkonkraftwerke-mit-speicher"]);
+const SET_CATEGORIES = new Set(["balkonkraftwerke", "balkonkraftwerke-mit-speicher"]);
+const { inverterMaxW, moduleMaxWp } = solarAssumptions.plugInLimits;
 
-/** Bewertet Sets nach den Antworten. Reine Funktion, damit sie testbar bleibt. */
-export function recommend(answers: FinderAnswers, products: Product[] = getAllProducts()): Recommendation[] {
-  const range = powerRanges[answers.power];
-  const scored: Recommendation[] = [];
+const placeReason: Record<Place, string> = {
+  balkon: "Für die Montage am Balkongeländer geeignet",
+  hausdach: "Für die Montage auf dem Hausdach geeignet",
+  flachdach: "Mit Aufständerung für Flachdächer geeignet",
+  garten: "Für die Aufstellung im Garten geeignet",
+};
 
-  for (const p of products) {
-    if (!setCategories.has(p.category)) continue;
-    if (!p.suitableFor.includes(answers.location)) continue;
-    const reasons: string[] = [];
-    const caveats: string[] = [];
-    let score = 0;
-    const wp = p.specs.totalWp ?? 0;
-    const storage = p.specs.storageKWh ?? 0;
-
-    // Speicher
-    if (answers.storage === "ja") {
-      if (storage > 0) {
-        score += 4;
-        reasons.push(`Mit ${formatKWh(storage)} Speicher für den Abend`);
-      } else score -= 6;
-    } else if (answers.storage === "nein") {
-      if (storage > 0) score -= 3;
-      else score += 2;
-    } else if (storage > 0) {
-      reasons.push(`Optional mit ${formatKWh(storage)} Speicher`);
-    }
-
-    // Modulanzahl
-    const count = p.specs.moduleCount ?? 0;
-    if (count === answers.modules) {
-      score += 3;
-      reasons.push(`${count} Module, passend zu deinem Platz`);
-    } else if (count > answers.modules) {
-      score -= 4;
-      caveats.push(`Braucht Platz für ${count} Module`);
-    } else score += 0.5;
-
-    // Leistung
-    if (wp >= range.min && wp <= range.max) {
-      score += 2;
-      reasons.push(`${formatWp(wp)} im gewünschten Bereich`);
-    } else if (wp > 0) score -= 1;
-
-    // Budget
-    if (hasPrice(p)) {
-      if (answers.budget === null || p.price <= answers.budget) {
-        score += answers.budget === null ? 0 : 2;
-        if (answers.budget !== null) reasons.push(`Im Budget (${formatEUR(p.price, { round: true })})`);
-      } else {
-        score -= 3;
-        caveats.push(`Über deinem Budget (${formatEUR(p.price, { round: true })})`);
-      }
-    } else {
-      caveats.push("Demo-Produkt: Preis und Verfügbarkeit folgen");
-      score -= 1.5;
-    }
-
-    if (p.dataStatus === "live") score += 1;
-    if (answers.location === "balkon") reasons.unshift("Geeignet für die Balkonmontage");
-
-    scored.push({ product: p, score, reasons, caveats });
-  }
-
-  return scored.sort((a, b) => b.score - a.score).slice(0, 3);
+/** Normiert einen Wert auf 0–1 innerhalb eines Bereichs (gleich große Werte ergeben 1) */
+function norm(value: number, min: number, max: number) {
+  if (max <= min) return 1;
+  return (value - min) / (max - min);
 }
 
-/** Passendes Zubehör zu den Antworten */
-export function recommendAccessories(answers: FinderAnswers, products: Product[] = getAllProducts()): Product[] {
-  const out: Product[] = [];
-  const mount = products.find((p) => p.category === "montage-zubehoer" && p.specs.tiltRange && p.suitableFor.includes(answers.location));
-  if (mount && (answers.location === "flachdach" || answers.location === "garten")) out.push(mount);
-  if (answers.storage !== "nein") {
-    const meter = products.find((p) => p.visual === "meter");
-    if (meter) out.push(meter);
+const storageOf = (p: Product) => p.specs.storageKWh ?? 0;
+const wpOf = (p: Product) => p.specs.totalWp ?? 0;
+
+/** Komplettsets, die am gewählten Ort montiert werden können */
+export function candidatesFor(place: Place, products: Product[] = getAllProducts()): Product[] {
+  const location = placeToLocation[place];
+  return products.filter((p) => SET_CATEGORIES.has(p.category) && p.suitableFor.includes(location));
+}
+
+/**
+ * Bewertet Komplettsets nach Ort, Unabhängigkeit und Priorität.
+ * Reine Funktion: gleiche Eingaben ergeben immer dasselbe Ergebnis.
+ */
+export function recommend(answers: FinderAnswers, products: Product[] = getAllProducts()): Recommendation[] {
+  const pool = candidatesFor(answers.place, products);
+  if (!pool.length) return [];
+
+  const priced = pool.filter(hasPrice);
+  const prices = priced.map((p) => p.price);
+  const minPrice = Math.min(...prices);
+  const maxPrice = Math.max(...prices);
+  const wps = pool.map(wpOf);
+  const minWp = Math.min(...wps);
+  const maxWp = Math.max(...wps);
+  const maxStorage = Math.max(0, ...pool.map(storageOf));
+
+  const scored = pool.map((p): Recommendation => {
+    const reasons: string[] = [placeReason[answers.place]];
+    const caveats: string[] = [];
+    let score = 0;
+    const storage = storageOf(p);
+    const wp = wpOf(p);
+
+    // Unabhängigkeit
+    if (answers.independence === "speicher") {
+      if (storage > 0) {
+        score += 6;
+        reasons.push(`Mit ${formatKWh(storage)} Speicher für den Abend`);
+      } else {
+        score -= 8;
+        caveats.push("Ohne Speicher – lässt sich später nachrüsten");
+      }
+    } else if (answers.independence === "ohne") {
+      if (storage > 0) {
+        score -= 6;
+        caveats.push(`Enthält einen Speicher (${formatKWh(storage)}), das kostet mehr`);
+      } else {
+        score += 4;
+        reasons.push("Ohne Speicher: einfacher und günstiger Einstieg");
+      }
+    } else {
+      reasons.push(storage > 0 ? `Mit ${formatKWh(storage)} Speicher für den Abend` : "Ohne Speicher – lässt sich später nachrüsten");
+    }
+
+    // Priorität
+    switch (answers.priority) {
+      case "preis":
+        if (hasPrice(p)) {
+          score += 6 * (1 - norm(p.price, minPrice, maxPrice));
+          if (p.price === minPrice) reasons.push(`Günstigster Einstieg in dieser Auswahl (${formatEUR(p.price, { round: true })})`);
+        }
+        break;
+      case "leistung":
+        score += 6 * norm(wp, minWp, maxWp);
+        if (wp === maxWp && wp > 0) reasons.push(`${formatWp(wp)} Modulleistung – die höchste in dieser Auswahl`);
+        break;
+      case "eigenversorgung":
+        score += maxStorage > 0 ? 6 * (storage / maxStorage) : 0;
+        score += storage > 0 ? 2 : 0;
+        if (storage > 0 && storage === maxStorage) reasons.push(`Größter Speicher in dieser Auswahl (${formatKWh(storage)})`);
+        if (storage === 0) caveats.push("Ohne Speicher deckst du vor allem den Verbrauch am Tag");
+        break;
+      case "installation":
+        if ((p.specs.moduleCount ?? 0) <= 2) {
+          score += 4;
+          reasons.push("Nur zwei Module – schnell montiert");
+        } else {
+          score += 1;
+          caveats.push(`${p.specs.moduleCount} Module brauchen mehr Platz und Montagezeit`);
+        }
+        score += 2;
+        reasons.push("Komplettset mit Wechselrichter und Kabel, steckerfertig");
+        if (answers.place === "hausdach") caveats.push("Auf dem Dach sollte ein Fachbetrieb montieren");
+        break;
+    }
+
+    // Rechtlicher Rahmen für Steckersolargeräte (aus den Produktdaten abgeleitet)
+    const inverter = p.specs.inverterW ?? 0;
+    if (inverter > 0 && inverter <= inverterMaxW && wp > 0 && wp <= moduleMaxWp) {
+      reasons.push(`Im Rahmen für Steckersolar: ${inverter} W Einspeisung, ${formatWp(wp)}`);
+    }
+
+    // Datenlage
+    if (p.dataStatus === "live") score += 1;
+    if (p.dataStatus === "demo" || !hasPrice(p)) {
+      score -= 2;
+      caveats.push("Demo-Produkt: Preis und Verfügbarkeit folgen");
+    }
+
+    return { product: p, score, reasons: unique(reasons), caveats: unique(caveats) };
+  });
+
+  scored.sort((a, b) => b.score - a.score || compareByPrice(a.product, b.product));
+
+  // Wer unsicher ist, sieht immer beide Wege: mit und ohne Speicher
+  if (answers.independence === "unsicher") {
+    const best = scored[0]!;
+    const other = scored.find((r) => (storageOf(r.product) > 0) !== (storageOf(best.product) > 0));
+    const rest = scored.filter((r) => r !== best && r !== other);
+    return [best, ...(other ? [other] : []), ...rest].slice(0, 3);
+  }
+  return scored.slice(0, 3);
+}
+
+function compareByPrice(a: Product, b: Product) {
+  const pa = hasPrice(a) ? a.price : Infinity;
+  const pb = hasPrice(b) ? b.price : Infinity;
+  return pa - pb;
+}
+
+function unique(list: string[]) {
+  return [...new Set(list)];
+}
+
+/* ------------------------------------------------------------------ */
+/* Zubehör und Nachrüstung                                              */
+/* ------------------------------------------------------------------ */
+
+export interface AccessoryHint {
+  product: Product;
+  /** Warum das Zubehör passt */
+  note: string;
+  kind: "montage" | "nachruesten";
+}
+
+/** Anzahl Module je Halterung aus dem Produktnamen („für 2 Module“) */
+function modulesPerMount(p: Product): number | null {
+  const m = p.name.match(/für\s+(\d+)\s+Module/i);
+  return m ? Number(m[1]) : null;
+}
+
+/**
+ * Passendes Zubehör zum empfohlenen Set:
+ * - Halterungen für Flachdach und Garten (Menge aus der Modulanzahl)
+ * - AC-gekoppelte Speicher zum späteren Nachrüsten, wenn das Set keinen Speicher hat
+ */
+export function accessoriesFor(answers: FinderAnswers, set: Product, products: Product[] = getAllProducts()): AccessoryHint[] {
+  const out: AccessoryHint[] = [];
+  const location = placeToLocation[answers.place];
+  const modules = set.specs.moduleCount ?? 0;
+
+  if (answers.place === "flachdach" || answers.place === "garten") {
+    for (const mount of products.filter((p) => p.category === "montage-zubehoer" && p.specs.tiltRange && p.suitableFor.includes(location))) {
+      const per = modulesPerMount(mount);
+      const qty = per && modules ? Math.ceil(modules / per) : null;
+      out.push({
+        product: mount,
+        kind: "montage",
+        note: qty ? `Für ${modules} Module brauchst du ${qty} ${qty === 1 ? "Halterung" : "Halterungen"}` : "Aufständerung für bessere Neigung",
+      });
+    }
+  }
+
+  if (storageOf(set) === 0 && answers.independence !== "ohne") {
+    for (const storage of products.filter((p) => p.category === "batteriespeicher" && p.tags.includes("ac-gekoppelt") && hasPrice(p))) {
+      out.push({
+        product: storage,
+        kind: "nachruesten",
+        note: `AC-gekoppelt: lässt sich an ein bestehendes Balkonkraftwerk anschließen (${formatKWh(storageOf(storage))})`,
+      });
+    }
   }
   return out;
 }
 
-/** Sinnvolle Modulleistung für die Simulation aus den Antworten */
-export function targetWp(answers: FinderAnswers): number {
-  const byModules = answers.modules * 440;
-  const range = powerRanges[answers.power];
-  return Math.min(2000, Math.max(range.min || 440, Math.min(range.max, byModules)));
+/** Hinweise, die unabhängig vom Produkt zum Ort gehören */
+export function placeNotes(place: Place): string[] {
+  if (place === "hausdach")
+    return [
+      "Arbeiten auf dem Dach sind gefährlich: Lass die Module von einem Fachbetrieb montieren.",
+      `Steckerfertige Anlagen sind auf ${inverterMaxW} W Einspeisung und ${formatWp(moduleMaxWp)} Modulleistung begrenzt. Für größere Dachanlagen beraten wir dich persönlich.`,
+    ];
+  if (place === "balkon") return ["Prüfe vor dem Kauf, ob dein Geländer die Module tragen kann, und sprich mit Vermieter oder Eigentümergemeinschaft."];
+  return [];
 }

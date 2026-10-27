@@ -7,7 +7,7 @@ export const metadata: Metadata = { title: "Datenschutz", robots: { index: false
 
 export default function PrivacyPage() {
   return (
-    <LegalPage title="Datenschutzerklärung">
+    <LegalPage title="Datenschutzerklärung" intro="Welche Daten wir verarbeiten, wenn du die Website nutzt, uns schreibst oder bestellst, und welche Rechte du hast.">
       <h2>1. Verantwortlicher</h2>
       <p>
         {brand.legal.company ?? <Placeholder>Firmenname</Placeholder>}
@@ -57,6 +57,14 @@ export default function PrivacyPage() {
         versendet, sowie an das beauftragte Versandunternehmen (Art. 6 Abs. 1 lit. b DSGVO).
       </p>
       <p>
+        Deine Angabe an der Kasse, ob die Voraussetzungen für den Nullsteuersatz erfüllt sind, speichern wir mit der Bestellung. Wir brauchen sie für
+        die Rechnung und müssen sie gegenüber dem Finanzamt nachweisen können (Art. 6 Abs. 1 lit. c DSGVO).{" "}
+        <Placeholder>Speicherung im Bestellsystem umsetzen</Placeholder>
+      </p>
+      <p>
+        Solange die Kasse nicht freigeschaltet ist, werden Eingaben an der Kasse weder übertragen noch gespeichert.
+      </p>
+      <p>
         <Placeholder>Lieferanten, Zahlungsdienstleister und Versanddienstleister benennen</Placeholder>
       </p>
 
@@ -66,15 +74,15 @@ export default function PrivacyPage() {
         Verbindung zu Servern von Google hergestellt.
       </p>
 
-      <h2>7. Deine Rechte</h2>
+      <h2>7. Keine Analyse- und Werbedienste</h2>
+      <p>
+        Wir binden derzeit keine Dienste zur Reichweitenmessung, für Werbung oder für Tracking ein. Ändert sich das, ergänzen wir diese Erklärung vorher.
+      </p>
+
+      <h2>8. Deine Rechte</h2>
       <p>
         Du hast das Recht auf Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung, Datenübertragbarkeit und Widerspruch sowie das Recht
         auf Beschwerde bei einer Datenschutz-Aufsichtsbehörde.
-      </p>
-
-      <h2>8. Stand</h2>
-      <p>
-        <Placeholder>Datum der letzten Aktualisierung</Placeholder>
       </p>
     </LegalPage>
   );

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
-import { Breadcrumbs } from "@/components/content/Breadcrumbs";
+import { PageHeader } from "@/components/content/PageHeader";
 import { CompareTable } from "@/components/shop/CompareTable";
+import { VatFootnote } from "@/components/shop/VatFootnote";
 
 export const metadata: Metadata = {
   title: "Produktvergleich",
@@ -11,16 +12,16 @@ export const metadata: Metadata = {
 export default function ComparePage() {
   return (
     <>
-      <div className="container-x pt-8">
-        <Breadcrumbs items={[{ label: "Produktvergleich" }]} />
-        <p className="eyebrow mt-10">Vergleich</p>
-        <h1 className="display-lg mt-3 text-[clamp(2.25rem,5vw,4rem)]">Produkte vergleichen</h1>
-        <p className="mt-4 max-w-[60ch] text-lg text-muted">
-          Leistung, Speicher und Ausstattung Seite an Seite. Unterschiede sind hervorgehoben, die jeweils höheren Werte markiert.
-        </p>
-      </div>
-      <section className="container-x pb-24 pt-10">
+      <PageHeader
+        eyebrow="Vergleich"
+        title="Produkte vergleichen"
+        lead="Leistung, Speicher und Ausstattung Seite an Seite. Unterschiede sind markiert, der jeweils höchste Wert hervorgehoben."
+        crumbs={[{ label: "Produktvergleich" }]}
+        flush
+      />
+      <section className="container-x pb-24 md:pb-32">
         <CompareTable />
+        <VatFootnote className="mt-20 md:mt-28" />
       </section>
     </>
   );

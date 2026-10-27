@@ -43,6 +43,19 @@ export const sortLabels: Record<NonNullable<ProductQuery["sort"]>, string> = {
   speicher: "Speicherkapazität",
 };
 
+export const wpOptions = [
+  { value: "", label: "Beliebig" },
+  { value: "800", label: "ab 800 Wp" },
+  { value: "1500", label: "ab 1.500 Wp" },
+];
+
+export const priceOptions = [
+  { value: "", label: "Beliebig" },
+  { value: "300", label: "bis 300 €" },
+  { value: "1000", label: "bis 1.000 €" },
+  { value: "1500", label: "bis 1.500 €" },
+];
+
 export function countActiveFilters(q: ProductQuery): number {
   return [
     q.category && q.category !== "alle",
@@ -52,4 +65,9 @@ export function countActiveFilters(q: ProductQuery): number {
     q.minWp,
     q.maxPrice,
   ].filter(Boolean).length;
+}
+
+/** Keine Filter, keine Suche, Standard-Sortierung: Dann zeigt die Liste alle Kategorien gegliedert. */
+export function isUnfiltered(q: ProductQuery): boolean {
+  return countActiveFilters(q) === 0 && !q.q && (q.sort ?? "relevanz") === "relevanz";
 }

@@ -3,30 +3,13 @@ import { Logo } from "@/components/brand/Logo";
 import { logoData } from "@/components/brand/logo-data";
 import { brand } from "@/config/brand";
 import { footerNav, legalNav } from "@/config/navigation";
-import { ButtonLink } from "@/components/ui/Button";
 
 export function Footer() {
   const year = new Date().getFullYear();
   return (
-    <footer className="on-dark relative overflow-hidden bg-ink text-paper">
-      <div aria-hidden className="pointer-events-none absolute -left-40 top-0 h-[420px] w-[420px] rounded-full bg-lime/10 blur-[120px]" />
+    <footer data-header="dark" className="cv-auto on-dark relative overflow-hidden border-t border-ink-line bg-ink text-paper" style={{ ["--cv-d" as string]: "720px", ["--cv-m" as string]: "1370px" }}>
       <div className="container-x relative">
-        <div className="grid gap-10 border-b border-ink-line py-16 md:grid-cols-[1.2fr_1fr] md:items-end">
-          <div>
-            <p className="eyebrow">Persönliche Beratung</p>
-            <p className="display-lg mt-3 max-w-xl text-4xl md:text-5xl">Fragen zu deinem Balkon, Dach oder Speicher?</p>
-          </div>
-          <div className="flex flex-wrap gap-3 md:justify-end">
-            <ButtonLink href="/kontakt" variant="primary" size="lg" arrow>
-              Beratung anfragen
-            </ButtonLink>
-            <ButtonLink href="/konfigurator" variant="outline-light" size="lg">
-              Produktfinder
-            </ButtonLink>
-          </div>
-        </div>
-
-        <div className="grid gap-10 py-14 sm:grid-cols-2 lg:grid-cols-[1.4fr_repeat(3,1fr)]">
+        <div className="grid gap-10 pb-14 pt-16 md:pt-20 sm:grid-cols-2 lg:grid-cols-[1.4fr_repeat(3,1fr)]">
           <div className="max-w-sm">
             <Logo tone="dark" height={34} glow />
             <p className="mt-5 text-sm text-muted-dark">{brand.description}</p>
@@ -69,7 +52,7 @@ export function Footer() {
           <p>
             © {year} {brand.legal.company ?? brand.name}. Vorschau-Version, Bestellungen sind noch nicht möglich.
           </p>
-          <ul className="flex flex-wrap gap-x-5 gap-y-2">
+          <ul className="flex flex-wrap items-center gap-x-5 gap-y-3">
             {legalNav.map((l) => (
               <li key={l.href}>
                 <Link href={l.href} className="hover:text-paper">
@@ -77,6 +60,15 @@ export function Footer() {
                 </Link>
               </li>
             ))}
+            {/* Widerrufsfunktion nach § 356a BGB: gut sichtbar auf jeder Seite */}
+            <li>
+              <Link
+                href="/vertrag-widerrufen"
+                className="inline-flex h-9 items-center rounded-full border border-paper/25 px-4 font-semibold text-paper transition-colors hover:border-paper hover:bg-paper hover:text-ink"
+              >
+                Vertrag widerrufen
+              </Link>
+            </li>
           </ul>
         </div>
       </div>

@@ -1,179 +1,130 @@
 "use client";
 
-import Image from "next/image";
-import { useEffect, useRef } from "react";
-import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { brand } from "@/config/brand";
+import { useEffect, useRef, type ReactNode } from "react";
+import { withGsap } from "@/lib/motion/gsap";
 import { ButtonLink } from "@/components/ui/Button";
 import { Magnetic } from "@/components/motion/Magnetic";
-import { HeroScene } from "./HeroScene";
+import { Icon } from "@/components/ui/Icon";
 
-const lines = [
-  ["DEINE", "ENERGIE"],
-  ["DEINE", "ZUKUNFT"],
-];
+/**
+ * Cinematic Hero.
+ * Choreografie (CSS, startet ohne JavaScript): Szene blendet ein → Überschrift
+ * gleitet zeilenweise aus der Maske → Unterzeile und Buttons → Fenster gehen an,
+ * Energielinie läuft durch die Szene → Scroll-Hinweis.
+ * GSAP ergänzt nur Parallaxe beim Scrollen und mit der Maus.
+ */
+interface Props {
+  /** Bild für Desktop (Foto über ArtImage oder Linienwerk-Szene) */
+  art: ReactNode;
+  /** Eigener Bildausschnitt für Handy */
+  artMobile: ReactNode;
+  facts: { value: string; label: string }[];
+}
 
-export function Hero() {
+export function Hero({ art, artMobile, facts }: Props) {
   const root = useRef<HTMLElement>(null);
 
   useEffect(() => {
     const el = root.current;
     if (!el) return;
-    gsap.registerPlugin(ScrollTrigger);
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (document.documentElement.dataset.motion !== "on") return;
+    return withGsap(({ gsap }) => {
     const ctx = gsap.context(() => {
-      if (reduce) return;
       const q = gsap.utils.selector(el);
-
-      // Auftritt
-      const tl = gsap.timeline({ defaults: { ease: "expo.out" } });
-      tl.from(q("[data-scene]"), { scale: 1.12, filter: "brightness(0.55)", duration: 2.6, ease: "power3.out" }, 0)
-        .from(q("[data-layer='sun']"), { y: 90, duration: 2.8, ease: "power2.out" }, 0)
-        .from(q("[data-window]"), { opacity: 0, duration: 0.5, stagger: { each: 0.18, from: "random" }, ease: "steps(3)" }, 0.9)
-        .from(q("[data-word]"), { yPercent: 115, rotate: 4, duration: 1.3, stagger: 0.09 }, 0.35)
-        .from(q("[data-dot]"), { scale: 0, duration: 0.8, stagger: 0.25, ease: "back.out(3)" }, 1.1)
-        .from(q("[data-underline]"), { scaleX: 0, duration: 1.2, ease: "expo.inOut" }, 1.3)
-        .from(q("[data-fade]"), { y: 26, opacity: 0, duration: 1.1, stagger: 0.12 }, 0.9)
-        .from(q("[data-rays]"), { opacity: 0, duration: 2.4, ease: "sine.out" }, 0.6);
-
-      // Lichtreflex wandert über das Solardach
-      gsap.fromTo(q("[data-sweep]"), { x: -200 }, { x: 900, duration: 3.6, ease: "sine.inOut", repeat: -1, repeatDelay: 2.4, delay: 2 });
-
-      // Parallax beim Scrollen
-      const depth: Record<string, number> = { sky: 0.05, sun: 0.22, far: 0.12, mid: 0.2, house: 0.3, front: 0.42 };
+      const depth: Record<string, number> = { sky: 0.08, sun: 0.22, ground: 0.18, house: 0.3, energy: 0.3 };
       Object.entries(depth).forEach(([layer, d]) => {
         gsap.to(q(`[data-layer='${layer}']`), {
-          y: d * 260,
+          y: d * 240,
           ease: "none",
           scrollTrigger: { trigger: el, start: "top top", end: "bottom top", scrub: true },
         });
       });
-      gsap.to(q("[data-content]"), {
-        y: -80,
-        opacity: 0.1,
+      gsap.to(q("[data-hero-content]"), {
+        y: -90,
+        opacity: 0,
         ease: "none",
-        scrollTrigger: { trigger: el, start: "top top", end: "bottom 20%", scrub: true },
+        scrollTrigger: { trigger: el, start: "top top", end: "bottom 25%", scrub: true },
       });
-
-      // Leichte Bewegung mit der Maus
       if (window.matchMedia("(pointer: fine)").matches) {
-        const movers = Object.keys(depth).map((layer) => ({
-          x: gsap.quickTo(q(`[data-layer='${layer}']`), "x", { duration: 1.2, ease: "power3.out" }),
-          d: depth[layer]!,
+        const movers = Object.entries(depth).map(([layer, d]) => ({
+          x: gsap.quickTo(q(`[data-layer='${layer}']`), "x", { duration: 1.4, ease: "power3.out" }),
+          d,
         }));
         const onMove = (e: PointerEvent) => {
           const nx = e.clientX / window.innerWidth - 0.5;
-          movers.forEach((m) => m.x(-nx * m.d * 60));
+          movers.forEach((m) => m.x(-nx * m.d * 70));
         };
         el.addEventListener("pointermove", onMove);
         return () => el.removeEventListener("pointermove", onMove);
       }
     }, el);
     return () => ctx.revert();
+    });
   }, []);
 
-  const photo = brand.media.hero;
-
   return (
-    <section ref={root} className="on-dark relative isolate flex min-h-[max(680px,100svh)] flex-col overflow-hidden bg-ink text-paper" aria-labelledby="hero-title">
-      {/* Bild oder gezeichnete Szene */}
-      <div data-scene className="absolute inset-0 -z-10 origin-[70%_60%]">
-        {photo ? (
-          <>
-            <Image src={photo.src} alt={photo.alt} fill priority sizes="100vw" className="object-cover" />
-            <div className="absolute inset-0 bg-[linear-gradient(90deg,rgb(10_17_24/0.8)_0%,rgb(10_17_24/0.2)_60%),linear-gradient(0deg,rgb(16_24_32/0.9)_0%,transparent_35%)]" />
-          </>
-        ) : (
-          <>
-            <div className="absolute inset-0 bg-[linear-gradient(180deg,#0A1118_0%,#17212B_40%,#3a2f33_62%,#15171b_78%,#101820_100%)] md:hidden" />
-            <HeroScene idPrefix="d" className="absolute inset-0 hidden h-full w-full md:block" />
-          </>
-        )}
-        {/* Sonnenstrahlen */}
-        <div
-          data-rays
-          aria-hidden
-          className="pointer-events-none absolute inset-0 mix-blend-screen motion-safe:animate-[rays_90s_linear_infinite]"
-          style={{
-            background:
-              "repeating-conic-gradient(from var(--ray-angle) at 74% 54%, rgb(255 214 150 / 0.11) 0deg 3deg, transparent 3deg 11deg)",
-            maskImage: "radial-gradient(circle at 74% 54%, #000 0%, transparent 62%)",
-            WebkitMaskImage: "radial-gradient(circle at 74% 54%, #000 0%, transparent 62%)",
-          }}
-        />
-        {/* Feine Lichtpartikel */}
-        <div aria-hidden className="pointer-events-none absolute inset-0 opacity-60 [background-image:radial-gradient(circle_at_20%_30%,rgb(255_220_160/0.5)_0_1px,transparent_2px),radial-gradient(circle_at_70%_20%,rgb(255_220_160/0.4)_0_1px,transparent_2px),radial-gradient(circle_at_40%_60%,rgb(255_220_160/0.35)_0_1px,transparent_2px),radial-gradient(circle_at_85%_45%,rgb(255_220_160/0.45)_0_1.5px,transparent_2.5px)] motion-safe:animate-[drift_18s_ease-in-out_infinite_alternate]" />
-      </div>
+    <section
+      ref={root}
+      data-header="dark"
+      className="hero on-dark relative isolate flex min-h-[max(680px,100svh)] flex-col overflow-hidden bg-night text-paper"
+      aria-labelledby="hero-title"
+    >
+      {/* Desktop: Bild füllt die Bühne */}
+      <div className="hero-art absolute inset-0 -z-10 hidden md:block">{art}</div>
 
-      <div data-content className="container-x relative flex flex-col justify-start pb-6 pt-[calc(76px+40px)] md:flex-1 md:justify-center md:pb-36 md:pt-[calc(76px+40px)]">
-        <p data-fade className="eyebrow mb-6 !text-paper/70">
-          Balkonkraftwerke · Speicher · Solarmodule
+      <div data-hero-content className="container-x relative z-10 flex flex-1 flex-col pt-[calc(76px+48px)] md:justify-end md:pb-16 md:pt-[calc(76px+56px)]">
+        <p className="hero-fade t-label !text-paper/60" style={{ ["--d" as string]: "0.15s" }}>
+          Solartechnik für dein Zuhause
         </p>
-        <h1 id="hero-title" className="display-xl m-0 text-[min(9.2vw,52px)] md:text-[clamp(44px,7.4vw,118px)]">
-          {lines.map((words, li) => (
-            <span key={li} className="block whitespace-nowrap">
-              {words.map((w, wi) => (
-                <span key={wi} className="mr-[0.22em] inline-block overflow-hidden pb-[0.06em] align-bottom last:mr-0">
-                  <span data-word className="relative inline-block will-change-transform">
-                    {w}
-                    {wi === words.length - 1 && (
-                      <span data-dot className="inline-block origin-bottom text-lime">
-                        .
-                      </span>
-                    )}
-                    {li === 1 && wi === 1 && (
-                      <span data-underline aria-hidden className="absolute -bottom-[0.04em] left-0 h-[0.07em] w-[calc(100%-0.35em)] origin-left rounded-full bg-lime" />
-                    )}
-                  </span>
-                </span>
-              ))}
+        <h1 id="hero-title" className="hero-title t-hero m-0 mt-6 uppercase">
+          <span className="line" style={{ ["--line" as string]: 0 }}>
+            <span>Energie</span>
+          </span>
+          <span className="line" style={{ ["--line" as string]: 1 }}>
+            <span>
+              neu gedacht
+              <span aria-hidden className="ml-[0.06em] inline-block h-[0.17em] w-[0.17em] rounded-full bg-[image:var(--sun-gradient)] align-baseline shadow-[0_0_0.35em_rgb(255_164_42/0.7)]" />
+              <span className="sr-only">.</span>
             </span>
-          ))}
+          </span>
         </h1>
-        <p data-fade className="mt-7 max-w-xl text-lg leading-relaxed text-paper/80 md:text-xl">
-          Erzeuge deinen eigenen Strom. Spare Energiekosten. Gewinne Unabhängigkeit.
+        <p className="hero-fade mt-7 max-w-[34ch] text-lg leading-relaxed text-paper/75 md:text-xl" style={{ ["--d" as string]: "0.85s" }}>
+          Dein Zuhause. Deine Energie. Deine Unabhängigkeit.
         </p>
-        <div data-fade className="mt-10 flex flex-wrap gap-3">
+        <div className="hero-fade mt-8 flex flex-wrap gap-3 md:mt-9" style={{ ["--d" as string]: "1.05s" }}>
           <Magnetic>
-            <ButtonLink href="#kategorien" variant="primary" size="lg" arrow>
-              Solarlösungen entdecken
+            <ButtonLink href="#produktwelt" variant="primary" size="lg" arrow>
+              Solarlösung entdecken
             </ButtonLink>
           </Magnetic>
           <Magnetic>
             <ButtonLink href="#produktfinder" variant="outline-light" size="lg">
-              Meine Solaranlage finden
+              Jetzt konfigurieren
             </ButtonLink>
           </Magnetic>
         </div>
       </div>
 
-      {!photo && (
-        <div aria-hidden className="relative -mt-2 h-[300px] flex-1 md:hidden">
-          <HeroScene idPrefix="m" viewBox="900 420 720 540" align="xMidYMin slice" className="absolute inset-0 h-full w-full" />
-        </div>
-      )}
+      {/* Handy: eigener Bildausschnitt unter dem Text */}
+      <div aria-hidden className="hero-art relative -mt-10 h-[min(58svh,460px)] [mask-image:linear-gradient(to_bottom,transparent,#000_22%)] md:hidden">
+        {artMobile}
+      </div>
 
-      {/* Fakten und Scroll-Hinweis */}
-      <div data-fade className="container-x relative pb-8" style={{ paddingBottom: "max(32px, env(safe-area-inset-bottom, 0px))" }}>
-        <div className="flex flex-wrap items-end justify-between gap-6">
-          <dl className="flex flex-wrap gap-x-10 gap-y-4 text-sm">
-            {[
-              ["800 W", "Einspeisung erlaubt"],
-              ["2.000 Wp", "Modulleistung möglich"],
-              ["0 %", "MwSt. auf Solartechnik"],
-            ].map(([v, l]) => (
-              <div key={l} className="border-l border-paper/25 pl-4">
-                <dt className="sr-only">{l}</dt>
-                <dd className="font-sans text-2xl font-bold">{v}</dd>
-                <dd className="text-paper/65">{l}</dd>
+      <div className="hero-fade container-x relative pb-8 md:pb-10" style={{ ["--d" as string]: "1.3s", paddingBottom: "max(28px, env(safe-area-inset-bottom, 0px))" }}>
+        <div className="flex items-end justify-between gap-6 border-t border-paper/15 pt-5">
+          <dl className="grid flex-1 grid-cols-3 gap-4 md:flex md:flex-none md:gap-12">
+            {facts.map((f) => (
+              <div key={f.label} className="min-w-0">
+                <dt className="sr-only">{f.label}</dt>
+                <dd className="t-num text-xl text-paper md:text-2xl">{f.value}</dd>
+                <dd className="mt-1 text-xs leading-snug text-paper/55 md:text-sm">{f.label}</dd>
               </div>
             ))}
           </dl>
-          <a href="#kategorien" className="group hidden items-center gap-3 text-sm text-paper/70 hover:text-paper md:flex" aria-label="Nach unten scrollen">
-            Scrollen
-            <span className="relative block h-12 w-[1.5px] overflow-hidden rounded-full bg-paper/25">
-              <span className="absolute inset-x-0 top-0 h-1/2 rounded-full bg-lime motion-safe:animate-[scrollcue_1.8s_var(--ease-in-out-soft)_infinite]" />
+          <a href="#kapitel-sonne" className="hidden items-center gap-3 text-sm text-paper/60 transition-colors hover:text-paper md:flex">
+            Entdecken
+            <span className="relative grid h-11 w-11 place-items-center rounded-full border border-paper/20">
+              <Icon name="arrow-down" size={18} className="hero-cue-arrow" />
             </span>
           </a>
         </div>

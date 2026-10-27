@@ -10,7 +10,8 @@ const trimmed = (min: number, max: number, label: string) =>
   z
     .string({ error: `${label} fehlt.` })
     .trim()
-    .min(min, { error: min <= 1 ? `${label} fehlt.` : `${label} ist zu kurz.` })
+    .min(1, { error: `${label} fehlt.` })
+    .min(min, { error: `${label} ist zu kurz.` })
     .max(max, { error: `${label} ist zu lang.` });
 
 export const germanZipSchema = z
@@ -61,9 +62,14 @@ export const checkoutSchema = z
     shippingAddress: addressSchema.optional(),
     lines: z.array(cartLineSchema).min(1, { error: "Der Warenkorb ist leer." }).max(30),
     note: z.string().trim().max(500, { error: "Hinweis ist zu lang (max. 500 Zeichen)." }).optional(),
-    acceptTerms: z.literal(true, { error: "Bitte AGB und Datenschutzerklärung akzeptieren." }),
+    acceptTerms: z.literal(true, { error: "Bitte bestätige die AGB." }),
     // Bestätigung, dass die Widerrufsbelehrung gelesen wurde
-    acknowledgeWithdrawal: z.literal(true, { error: "Bitte die Widerrufsbelehrung bestätigen." }),
+    acknowledgeWithdrawal: z.literal(true, { error: "Bitte bestätige, dass du die Widerrufsbelehrung gelesen hast." }),
+    /**
+     * Kundin oder Kunde bestätigt die Voraussetzungen für den Nullsteuersatz (§ 12 Abs. 3 UStG).
+     * Fehlt die Bestätigung, rechnet der Server mit dem Regelsteuersatz.
+     */
+    zeroRateConfirmed: z.boolean().optional().default(false),
   })
   .superRefine((v, ctx) => {
     if (!v.shippingSameAsBilling && !v.shippingAddress) {

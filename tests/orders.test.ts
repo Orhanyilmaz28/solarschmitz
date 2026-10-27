@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createOrder, CHECKOUT_DISABLED_MESSAGE } from "@/lib/checkout/create-order";
+import { createOrder, CHECKOUT_DISABLED_MESSAGE, orderLineFor } from "@/lib/checkout/create-order";
+import { getProductById } from "@/lib/catalog";
 import { checkoutSchema, fieldErrors } from "@/lib/checkout/schemas";
 import { applyShipmentUpdate, forwardOrder } from "@/lib/orders/forward";
 import { processShipmentUpdate } from "@/lib/orders/shipments";
@@ -237,5 +238,37 @@ describe("Checkout", () => {
     const res = await createOrder({ ...valid, lines: [] }, { store: createMemoryStore(), checkoutEnabled: () => true });
     expect(res).toMatchObject({ ok: false, code: "VALIDATION", httpStatus: 400 });
     if (!res.ok) expect(res.fields?.lines).toMatch(/leer/);
+  });
+});
+
+describe("Umsatzsteuer in Bestellpositionen (§ 12 Abs. 3 UStG)", () => {
+  const p = getProductById("p-eforu-set-880")!;
+  it("behält 0 % nur mit Bestätigung der Voraussetzungen", () => {
+    const line = orderLineFor({ ...p, price: 329, vatRate: 0 }, 1, true);
+    expect(line.vatRate).toBe(0);
+    expect(line.unitPrice).toBe(329);
+  });
+  it("rechnet ohne Bestätigung mit 19 % und höherem Bruttopreis", () => {
+    const line = orderLineFor({ ...p, price: 329, vatRate: 0 }, 2, false);
+    expect(line.vatRate).toBe(19);
+    expect(line.unitPrice).toBe(391.51);
+    expect(line.quantity).toBe(2);
+  });
+  it("lässt Artikel mit Regelsteuersatz unverändert", () => {
+    const line = orderLineFor({ ...p, price: 99, vatRate: 19 }, 1, false);
+    expect(line.vatRate).toBe(19);
+    expect(line.unitPrice).toBe(99);
+  });
+  it("Schema setzt die Bestätigung ohne Angabe auf false", () => {
+    const parsed = checkoutSchema.safeParse({
+      contact: { email: "erika@example.org" },
+      billingAddress: address,
+      shippingSameAsBilling: true,
+      lines: [{ productId: "p-apsystems-ez1m", quantity: 1 }],
+      acceptTerms: true,
+      acknowledgeWithdrawal: true,
+    });
+    expect(parsed.success).toBe(true);
+    if (parsed.success) expect(parsed.data.zeroRateConfirmed).toBe(false);
   });
 });

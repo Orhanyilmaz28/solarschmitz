@@ -12,9 +12,9 @@ export default function CartPage() {
     <>
       <div className="container-x pt-8">
         <Breadcrumbs items={[{ label: "Warenkorb" }]} />
-        <h1 className="display-lg mt-10 text-[clamp(2.25rem,5vw,4rem)]">Warenkorb</h1>
+        <h1 className="t-h1 mb-0 mt-10 md:mt-14">Warenkorb</h1>
       </div>
-      <section className="container-x pb-24 pt-10">
+      <section className="container-x pb-24 pt-10 md:pb-32 md:pt-14">
         <CartView />
       </section>
     </>

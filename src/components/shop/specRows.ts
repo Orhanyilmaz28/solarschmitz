@@ -56,3 +56,70 @@ export function rowsFor(p: Product): { label: string; value: string }[] {
 }
 
 export { locationLabels };
+
+// ---------- Gruppierte technische Daten (Produktseite) ----------
+
+export interface SpecGroup {
+  title: string;
+  rows: { label: string; value: string }[];
+}
+
+const groupDefs: { title: string; keys: string[] }[] = [
+  { title: "Leistung", keys: ["moduleCount", "moduleWp", "totalWp", "inverterW", "mppt"] },
+  { title: "Speicher", keys: ["storageKWh", "storageMaxKWh"] },
+  { title: "Module & Montage", keys: ["moduleType", "cellType", "tiltRange", "maxLengthMm"] },
+  { title: "Anschluss & Steuerung", keys: ["connectivity", "compatibleWith"] },
+];
+
+/** Technische Daten in Gruppen, nur mit vorhandenen Werten, plus allgemeine Angaben */
+export function specGroups(p: Product): SpecGroup[] {
+  const byKey = new Map(specRows.map((r) => [r.key, r]));
+  const groups: SpecGroup[] = groupDefs
+    .map((g) => ({
+      title: g.title,
+      rows: g.keys
+        .map((k) => byKey.get(k))
+        .filter((r): r is SpecRow => r !== undefined)
+        .map((r) => ({ label: r.label, value: r.value(p) }))
+        .filter((r): r is { label: string; value: string } => r.value !== null),
+    }))
+    .filter((g) => g.rows.length > 0);
+  const general = [
+    { label: "Hersteller / Marke", value: p.brand },
+    { label: "Kategorie", value: getCategory(p.category)?.name ?? null },
+    { label: "Geeignet für", value: p.suitableFor.length ? p.suitableFor.map((s) => locationLabels[s] ?? s).join(", ") : null },
+    { label: "Umsatzsteuer", value: p.vatRate === 0 ? "0\u00a0% (Nullsteuersatz, §\u00a012 Abs.\u00a03\u00a0UStG)" : "19\u00a0%" },
+    { label: "Artikelnummer", value: p.sku },
+  ].filter((r): r is { label: string; value: string } => r.value !== null);
+  return [...groups, { title: "Allgemein", rows: general }];
+}
+
+// ---------- Kurzdaten ----------
+
+/** Wichtigste technische Werte, kurz und mit Einheit (für Kacheln und Variantenwahl) */
+export function keySpecs(p: Product, limit = 3): string[] {
+  const s = p.specs;
+  const out: string[] = [];
+  if (s.moduleCount && s.moduleWp && s.moduleCount > 1) out.push(`${s.moduleCount} × ${formatInt(s.moduleWp)} Wp`);
+  else if (s.totalWp) out.push(formatWp(s.totalWp));
+  if (s.inverterW) out.push(`${formatInt(s.inverterW)} W`);
+  if (s.storageKWh) out.push(formatKWh(s.storageKWh));
+  if (s.storageMaxKWh) out.push(`bis ${formatKWh(s.storageMaxKWh)}`);
+  if (s.mppt) out.push(`${s.mppt} MPPT`);
+  if (s.tiltRange) out.push(s.tiltRange);
+  if (!out.length && s.connectivity) out.push(s.connectivity);
+  return out.slice(0, limit);
+}
+
+/** Kurzdaten je Variante: was alle gemeinsam haben, plus was sie unterscheidet */
+export function variantSpecs(variants: Product[]): Map<string, string> {
+  const all = variants.map((v) => ({ id: v.id, specs: keySpecs(v, 5) }));
+  const shared = all[0]?.specs.filter((s) => all.every((o) => o.specs.includes(s))) ?? [];
+  return new Map(
+    all.map(({ id, specs }) => {
+      const diff = specs.filter((s) => !shared.includes(s));
+      const line = (diff.length ? [shared[0], ...diff] : specs).filter((s): s is string => Boolean(s)).slice(0, 2);
+      return [id, line.join(" · ")];
+    }),
+  );
+}

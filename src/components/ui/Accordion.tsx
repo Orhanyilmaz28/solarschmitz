@@ -35,7 +35,7 @@ export function Accordion({ items, defaultOpen, tone = "light" }: { items: Accor
                 <span
                   aria-hidden
                   className={`relative grid h-9 w-9 shrink-0 place-items-center rounded-full border transition-colors duration-300 ${
-                    isOpen ? "border-lime bg-lime text-ink" : tone === "light" ? "border-line group-hover:border-ink" : "border-ink-line group-hover:border-paper"
+                    isOpen ? (tone === "light" ? "border-ink bg-ink text-paper" : "border-paper bg-paper text-ink") : tone === "light" ? "border-line group-hover:border-ink" : "border-ink-line group-hover:border-paper"
                   }`}
                 >
                   <span className="absolute h-[1.5px] w-3.5 bg-current" />

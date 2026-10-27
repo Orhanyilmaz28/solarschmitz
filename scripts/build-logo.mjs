@@ -47,6 +47,12 @@ const CELLS = [];
 for (let i = 0; i < K; i++) for (let j = 0; j < K; j++) CELLS.push({ i, j, d: cham(Q0 + i * (CELL + CELL_GAP), Q0 + j * (CELL + CELL_GAP), CELL, CHAMFER) });
 CELLS.sort((a, b) => a.i + a.j - (b.i + b.j) || a.j - b.j);
 const MODULE = { x: Q0, y: Q0, size: r2(QS) };
+// Kleingrößen-Version: 2 × 2 Zellen mit größeren Abständen, bleibt ab ca. 16 px Höhe lesbar
+const K2 = 2;
+const CELL_GAP2 = 4;
+const CELL2 = (QS - CELL_GAP2 * (K2 - 1)) / K2;
+const CELLS_COMPACT = [];
+for (let i = 0; i < K2; i++) for (let j = 0; j < K2; j++) CELLS_COMPACT.push(cham(Q0 + i * (CELL2 + CELL_GAP2), Q0 + j * (CELL2 + CELL_GAP2), CELL2, 2.2));
 const GLINT = `M${r2(Q0)} ${r2(Q0 + QS * 0.62)}L${r2(Q0 + QS * 0.62)} ${r2(Q0)}H${r2(Q0 + QS * 0.82)}L${r2(Q0)} ${r2(Q0 + QS * 0.82)}Z`;
 
 // ---------- Schrift ----------
@@ -64,7 +70,7 @@ async function loadFont(weight) {
   return opentype.parse(await (await fetch(url)).arrayBuffer());
 }
 
-const TRACK = -0.03; // Laufweite in em
+let TRACK = -0.03; // Laufweite in em (Kleingrößen-Version: 0)
 const F = 100; // Schriftgröße im Logo-Raster
 
 /** Setzt Text Glyphe für Glyphe; liefert Pfade, Begrenzungsrahmen und Endposition. */
@@ -108,10 +114,10 @@ const sunGradient = (id) =>
   `<linearGradient id="${id}" x1="0.15" y1="0" x2="0.55" y2="1">${SUN_STOPS.map(([o, c]) => `<stop offset="${o}" stop-color="${c}"/>`).join("")}</linearGradient>`;
 
 /** Bildmarke als SVG-Gruppe in einem Feld (x, y, Kantenlänge). tone: light | dark | mono */
-function markGroup({ x, y, size, tone, id, monoColor = INK, glow = false }) {
+function markGroup({ x, y, size, tone, id, monoColor = INK, glow = false, compact = false }) {
   const s = size / 104;
   const t = `translate(${r2(x - 8 * s)} ${r2(y - 8 * s)}) scale(${r2(s * 10000) / 10000})`;
-  const cells = CELLS.map((c) => c.d).join("");
+  const cells = compact ? CELLS_COMPACT.join("") : CELLS.map((c) => c.d).join("");
   if (tone === "mono") return `<g transform="${t}" fill="${monoColor}"><path d="${SUN_PATH}"/><path d="${cells}"/></g>`;
   const glass =
     tone === "light"
@@ -178,6 +184,12 @@ async function main() {
     return { mark: { x: ox + (w - size) / 2, y: oy, size }, parts: [b, l], bold: b.paths, light: l.paths };
   }
 
+  /** Monogramm: Anfangsbuchstabe(n) bis zum Sonnen-„o“, also „S☀“ */
+  function monogram(ox = 0, oy = 0) {
+    const sig = signature(ox, oy);
+    return { mark: sig.mark, parts: [sig.parts[0]], bold: sig.parts[0].paths, light: [] };
+  }
+
   const finish = (fn) => {
     const n = normalize(fn(0, 0));
     const c = fn(n.dx, n.dy);
@@ -187,6 +199,10 @@ async function main() {
   const sig = finish(signature);
   const lock = finish(lockup);
   const stack = finish(stacked);
+  const mono = finish(monogram);
+  TRACK = 0;
+  const compact = finish(signature);
+  TRACK = -0.03;
 
   // ---- TypeScript-Daten für die React-Komponenten ----
   const data = {
@@ -196,6 +212,7 @@ async function main() {
     signature: sig,
     lockup: lock,
     stacked: stack,
+    monogram: mono,
   };
   await writeFile(
     path.join(root, "src/components/brand/logo-data.ts"),
@@ -206,7 +223,7 @@ async function main() {
   const out = path.join(root, "public", "brand");
   await mkdir(out, { recursive: true });
   const textPaths = (d, color) => `<path fill="${color}" d="${d.bold.join("")}"/><path fill="${color}" d="${d.light.join("")}"/>`;
-  const comp = (d, tone, id, ink, glow = false) => markGroup({ ...d.mark, tone, id, monoColor: ink, glow }) + textPaths(d, ink);
+  const comp = (d, tone, id, ink, glow = false, compactMark = false) => markGroup({ ...d.mark, tone, id, monoColor: ink, glow, compact: compactMark }) + textPaths(d, ink);
   const files = {
     // Hauptlogo: Signatur
     "sonnenwerk-logo.svg": svgDoc(sig.width, sig.height, label, comp(sig, "light", "a", INK)),
@@ -218,6 +235,12 @@ async function main() {
     "sonnenwerk-logo-mit-zeichen-dark.svg": svgDoc(lock.width, lock.height, label, comp(lock, "dark", "f", PAPER)),
     "sonnenwerk-stacked.svg": svgDoc(stack.width, stack.height, label, comp(stack, "light", "g", INK)),
     "sonnenwerk-stacked-dark.svg": svgDoc(stack.width, stack.height, label, comp(stack, "dark", "h", PAPER)),
+    // Kleingrößen-Version (ab ca. 16 px Höhe): offenere Laufweite, 2 × 2 Zellen
+    "sonnenwerk-logo-kompakt.svg": svgDoc(compact.width, compact.height, label, comp(compact, "light", "l", INK, false, true)),
+    "sonnenwerk-logo-kompakt-dark.svg": svgDoc(compact.width, compact.height, label, comp(compact, "dark", "m", PAPER, false, true)),
+    // Monogramm „S☀“
+    "sonnenwerk-monogramm.svg": svgDoc(mono.width, mono.height, label, comp(mono, "light", "n", INK)),
+    "sonnenwerk-monogramm-dark.svg": svgDoc(mono.width, mono.height, label, comp(mono, "dark", "o", PAPER)),
     // Bildmarke allein
     "sonnenwerk-zeichen.svg": svgDoc(104, 104, label, markGroup({ x: 0, y: 0, size: 104, tone: "light", id: "i" })),
     "sonnenwerk-zeichen-dark.svg": svgDoc(104, 104, label, markGroup({ x: 0, y: 0, size: 104, tone: "dark", id: "j" })),
@@ -250,6 +273,45 @@ ${markGroup({ x: 13, y: 13, size: 38, tone: "dark", id: "a" })}`,
 <g transform="translate(${r2(bx)} ${r2(by)}) scale(${r2(scale * 10000) / 10000})">${comp(sig, "dark", "z", PAPER, true)}</g>
 <text x="${bw / 2}" y="${bh - 92}" text-anchor="middle" font-family="Sora, Arial, sans-serif" font-size="30" fill="#9AA7B1" letter-spacing="1">Balkonkraftwerke · Speicher · Solarmodule</text>`,
   );
+
+  // Monogramm als Kachel (Profilbild Social Media, 512 × 512)
+  {
+    const tile = 512;
+    const sc = (tile * 0.56) / Math.max(mono.width, mono.height);
+    const tx = (tile - mono.width * sc) / 2;
+    const ty = (tile - mono.height * sc) / 2;
+    files["sonnenwerk-monogramm-kachel.svg"] = svgDoc(
+      tile,
+      tile,
+      label,
+      `<defs><radialGradient id="bg" cx="0.5" cy="0.45" r="0.75"><stop offset="0" stop-color="#1B2733"/><stop offset="1" stop-color="${INK}"/></radialGradient></defs>
+<rect width="${tile}" height="${tile}" fill="url(#bg)"/>
+<g transform="translate(${r2(tx)} ${r2(ty)}) scale(${r2(sc * 10000) / 10000})">${comp(mono, "dark", "p", PAPER, true)}</g>`,
+    );
+  }
+
+  // Animierte Signatur (eigenständige Datei, z. B. für Präsentationen, Video-Intros, E-Mail-Signaturen in Browsern)
+  {
+    const d = sig;
+    const s = d.mark.size / 104;
+    const t = `translate(${r2(d.mark.x - 8 * s)} ${r2(d.mark.y - 8 * s)}) scale(${r2(s * 10000) / 10000})`;
+    const glyphs = [...d.bold, ...d.light];
+    const style = `<style>
+.sw{stroke-dashoffset:100;animation:sw 1.15s cubic-bezier(.65,0,.25,1) .08s forwards}
+.c{opacity:0;transform:scale(.35);transform-box:fill-box;transform-origin:center;animation:c .55s cubic-bezier(.16,1,.3,1) forwards;animation-delay:calc(.62s + var(--i)*70ms)}
+.gl{transform:translate(-48px,-48px);animation:gl 1.1s cubic-bezier(.65,0,.35,1) 1.25s forwards}
+.t{opacity:0;transform:translateY(18%);transform-box:fill-box;animation:t .8s cubic-bezier(.16,1,.3,1) forwards;animation-delay:calc(.3s + var(--i)*40ms)}
+@keyframes sw{to{stroke-dashoffset:0}}@keyframes c{to{opacity:1;transform:none}}@keyframes gl{to{transform:translate(48px,48px)}}@keyframes t{to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.sw{animation:none;stroke-dashoffset:0}.c,.t{animation:none;opacity:1;transform:none}.gl{animation:none;transform:none}}
+</style>`;
+    const cells = CELLS.map((c, i) => `<path class="c" style="--i:${i}" d="${c.d}" fill="url(#am)"/>`).join("");
+    const body = `${style}<defs>${sunGradient("as")}<linearGradient id="am" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2A3A4A"/><stop offset="1" stop-color="#0B121A"/></linearGradient>
+<mask id="aw" maskUnits="userSpaceOnUse" x="0" y="0" width="120" height="120"><circle class="sw" cx="60" cy="60" r="26" fill="none" stroke="#fff" stroke-width="53" pathLength="100" stroke-dasharray="100 100" transform="rotate(90 60 60)"/></mask>
+<clipPath id="ac"><rect x="${MODULE.x}" y="${MODULE.y}" width="${MODULE.size}" height="${MODULE.size}"/></clipPath></defs>
+<g transform="${t}"><path d="${SUN_PATH}" fill="url(#as)" mask="url(#aw)"/>${cells}<g clip-path="url(#ac)"><path class="gl" d="${GLINT}" fill="#fff" opacity="0.14"/></g></g>
+<g fill="${INK}">${glyphs.map((g, i) => `<path class="t" style="--i:${i}" d="${g}"/>`).join("")}</g>`;
+    files["sonnenwerk-logo-animiert.svg"] = svgDoc(d.width, d.height, label, body);
+  }
 
   for (const [name, content] of Object.entries(files)) {
     await writeFile(path.join(out, name), content);

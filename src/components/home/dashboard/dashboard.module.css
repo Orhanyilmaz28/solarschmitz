@@ -1,0 +1,98 @@
+/* Energie-Dashboard: Fluss-Animation und Zeitregler */
+
+/* Fließende Energie entlang eines Pfads (pathLength = 1) */
+.flow {
+  stroke-dasharray: 0.012 0.038;
+  animation: flow var(--flow-dur, 2.4s) linear infinite;
+  transition: opacity 0.4s ease, stroke-width 0.4s ease;
+}
+.reverse {
+  animation-direction: reverse;
+}
+.paused .flow {
+  animation-play-state: paused;
+}
+@keyframes flow {
+  to {
+    stroke-dashoffset: -0.5;
+  }
+}
+
+/* Zeitregler */
+.scrubber {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 32px;
+  background: transparent;
+  cursor: pointer;
+  margin: 0;
+}
+.scrubber:focus {
+  outline: none;
+}
+.scrubber::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    var(--color-sun-2) 0%,
+    var(--color-sun-2) var(--progress, 0%),
+    var(--color-ink-line) var(--progress, 0%),
+    var(--color-ink-line) 100%
+  );
+}
+.scrubber::-moz-range-track {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--color-ink-line);
+}
+.scrubber::-moz-range-progress {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--color-sun-2);
+}
+.scrubber::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  margin-top: -9px;
+  border-radius: 999px;
+  background: var(--color-paper);
+  border: 5px solid var(--color-sun-2);
+  box-shadow: 0 4px 14px rgb(0 0 0 / 0.45);
+  transition: transform 0.2s ease;
+}
+.scrubber::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: var(--color-paper);
+  border: 5px solid var(--color-sun-2);
+  box-shadow: 0 4px 14px rgb(0 0 0 / 0.45);
+}
+.scrubber:hover::-webkit-slider-thumb,
+.scrubber:active::-webkit-slider-thumb {
+  transform: scale(1.12);
+}
+.scrubber:focus-visible::-webkit-slider-thumb {
+  outline: 2px solid var(--color-sun-1);
+  outline-offset: 3px;
+}
+.scrubber:focus-visible::-moz-range-thumb {
+  outline: 2px solid var(--color-sun-1);
+  outline-offset: 3px;
+}
+
+/* Weicher Wechsel der Kennzahlen */
+.value {
+  transition: color 0.3s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flow {
+    animation: none;
+    stroke-dasharray: none;
+  }
+}

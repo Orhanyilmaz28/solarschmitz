@@ -1,0 +1,126 @@
+/* Kapitel 5 – die Sonne geht über dem Horizont auf */
+.section {
+  --ground: clamp(110px, 13vw, 200px);
+  --cap: clamp(150px, 21vw, 320px);
+  --sun: min(1200px, 132vw);
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: var(--color-night);
+  color: var(--color-paper);
+}
+
+.art {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.sky {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    var(--color-night) 0%,
+    #0a0f16 48%,
+    #19161f 66%,
+    #45282a 80%,
+    #b8693f calc(100% - var(--ground) - 30px),
+    #f0a35e calc(100% - var(--ground))
+  );
+}
+
+.glow {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--ground) - var(--sun) * 0.45);
+  width: calc(var(--sun) * 1.7);
+  aspect-ratio: 1;
+  translate: -50% 0;
+  background: radial-gradient(closest-side, rgb(255 213 138 / 0.42), rgb(255 164 42 / 0.16) 32%, rgb(226 102 42 / 0.05) 58%, transparent 74%);
+}
+
+.sunWrap {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--ground) + var(--cap) - var(--sun));
+  width: var(--sun);
+  aspect-ratio: 1;
+  margin-left: calc(var(--sun) / -2);
+  will-change: transform;
+}
+
+.rays {
+  position: absolute;
+  inset: -100%;
+  opacity: 0.9;
+}
+
+.sun {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 42%, #fffbee 0%, #ffe9b8 32%, #ffc66e 62%, #ff9a3a 86%, #ff7a1f 100%);
+  box-shadow:
+    0 0 80px 10px rgb(255 196 110 / 0.55),
+    0 0 220px 60px rgb(255 140 50 / 0.25);
+}
+
+.ground {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: var(--ground);
+  background: linear-gradient(to bottom, #120f12 0%, #0a0d11 30%, #070a0d 100%);
+}
+.grid {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.horizon {
+  position: absolute;
+  inset-inline: 0;
+  bottom: var(--ground);
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgb(255 216 77 / 0.55) 30%, rgb(255 246 220 / 0.9) 50%, rgb(255 216 77 / 0.55) 70%, transparent);
+}
+
+.content {
+  position: relative;
+  z-index: 1;
+  padding-top: var(--space-section);
+  padding-bottom: calc(var(--ground) + var(--cap) + 56px);
+  text-align: center;
+}
+
+.title {
+  margin-inline: auto;
+}
+
+.sunText :global(.line) > span {
+  background: var(--sun-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  padding-right: 0.04em;
+}
+
+.lead {
+  color: rgb(248 250 247 / 0.72);
+}
+
+.contact {
+  margin-top: 32px;
+  font-size: 14px;
+  color: rgb(248 250 247 / 0.7);
+}
+
+@media (max-width: 767px) {
+  .content {
+    padding-bottom: calc(var(--ground) + var(--cap) + 40px);
+  }
+}

@@ -87,6 +87,8 @@ export interface Order {
   supplierOrders: SupplierOrder[];
   payment?: { provider: string; reference?: string; status: "pending" | "paid" | "failed" | "refunded" };
   note?: string;
+  /** Angabe zum Nullsteuersatz (§ 12 Abs. 3 UStG) mit Zeitpunkt, als Nachweis */
+  zeroRate?: { confirmed: boolean; at: string };
   events: OrderEvent[];
 }
 

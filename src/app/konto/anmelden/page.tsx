@@ -17,7 +17,7 @@ export default function LoginPage() {
         footer={
           <p>
             Noch kein Konto?{" "}
-            <Link href="/konto/registrieren" className="font-semibold underline decoration-lime decoration-2 underline-offset-4">
+            <Link href="/konto/registrieren" className="font-semibold underline decoration-ink/25 underline-offset-4 hover:decoration-ink">
               Konto anlegen
             </Link>
           </p>

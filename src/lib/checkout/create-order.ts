@@ -9,6 +9,7 @@ import { getPaymentProvider, getPaymentStatus, type PaymentSession } from "@/lib
 import { findProduct } from "@/lib/store/catalog";
 import type { Store } from "@/lib/store/types";
 import { errorMessage } from "@/lib/suppliers/errors";
+import { withStandardVat, STANDARD_VAT_RATE } from "@/lib/cart/vat";
 import { checkoutSchema, fieldErrors, type AddressInput } from "./schemas";
 
 export type CreateOrderErrorCode =
@@ -34,6 +35,25 @@ function toAddress(a: AddressInput): Address {
 export function newOrderNumber(now = new Date()): string {
   const d = now.toISOString().slice(0, 10).replace(/-/g, "");
   return `SS-${d}-${randomBytes(2).toString("hex").toUpperCase()}`;
+}
+
+/**
+ * Bestellposition mit Steuersatz.
+ * Katalogpreise begünstigter Artikel sind mit 0 % USt. ausgewiesen. Ohne Bestätigung der
+ * Voraussetzungen (§ 12 Abs. 3 UStG) gilt der Regelsteuersatz, der Bruttopreis steigt entsprechend.
+ */
+export function orderLineFor(p: Product, quantity: number, zeroRateConfirmed: boolean): OrderLine {
+  const standard = p.vatRate === 0 && !zeroRateConfirmed;
+  return {
+    productId: p.id,
+    sku: p.sku,
+    name: p.name,
+    quantity,
+    unitPrice: standard ? withStandardVat(p.price) : p.price,
+    vatRate: standard ? STANDARD_VAT_RATE : p.vatRate,
+    supplierId: p.supplier.id,
+    supplierSku: p.supplier.supplierSku,
+  };
 }
 
 export interface CreateOrderDeps {
@@ -82,16 +102,7 @@ export async function createOrder(input: unknown, deps: CreateOrderDeps): Promis
         message: `${p?.name ?? "Ein Artikel"} ist derzeit nicht bestellbar. Bitte den Warenkorb prüfen.`,
       };
     }
-    lines.push({
-      productId: p.id,
-      sku: p.sku,
-      name: p.name,
-      quantity: l.quantity,
-      unitPrice: p.price,
-      vatRate: p.vatRate,
-      supplierId: p.supplier.id,
-      supplierSku: p.supplier.supplierSku,
-    });
+    lines.push(orderLineFor(p, l.quantity, data.zeroRateConfirmed));
   }
 
   const now = (deps.now ?? new Date()).toISOString();
@@ -112,7 +123,17 @@ export async function createOrder(input: unknown, deps: CreateOrderDeps): Promis
     totals: computeTotals(lines, shipping),
     supplierOrders: splitBySupplier(number, lines, now),
     note: data.note || undefined,
-    events: [{ at: now, type: "status", message: "Bestellung angelegt" }],
+    zeroRate: { confirmed: data.zeroRateConfirmed, at: now },
+    events: [
+      { at: now, type: "status", message: "Bestellung angelegt" },
+      {
+        at: now,
+        type: "status",
+        message: data.zeroRateConfirmed
+          ? "Voraussetzungen für 0 % USt. (§ 12 Abs. 3 UStG) bestätigt"
+          : "Keine Bestätigung für 0 % USt., Regelsteuersatz angewendet",
+      },
+    ],
   };
 
   try {

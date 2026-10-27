@@ -72,7 +72,13 @@ export const productSchema = z.object({
   includes: z.array(z.string()).default([]),
   /** Bruttopreis in Euro */
   price: z.number().nonnegative(),
+  /**
+   * Früherer Preis aus Lieferantendaten. Wird NICHT angezeigt: Streichpreise sind nach
+   * § 11 PAngV nur mit dem eigenen niedrigsten Preis der letzten 30 Tage zulässig.
+   */
   compareAtPrice: z.number().nonnegative().optional(),
+  /** Unverbindliche Preisempfehlung des Herstellers; angezeigt nur, wenn verified = true */
+  uvp: z.object({ amount: z.number().nonnegative(), verified: z.boolean() }).optional(),
   /** 0 = Nullsteuersatz nach § 12 Abs. 3 UStG, 19 = Regelsteuersatz */
   vatRate: z.union([z.literal(0), z.literal(19)]),
   suitableFor: z.array(z.enum(installLocations)).default([]),
@@ -96,6 +102,28 @@ export const productSchema = z.object({
   dataStatus: z.enum(dataStatuses),
   dataNote: z.string().optional(),
   tags: z.array(z.string()).default([]),
+
+  /** Produktfamilie für den Varianten-Wechsel auf der Produktseite (gleicher Wert = gleiche Familie) */
+  family: z.string().optional(),
+  /** Kurzer Name der Variante innerhalb der Familie, z. B. „Mit Speicher“ */
+  variantLabel: z.string().optional(),
+  /**
+   * Herstellerangaben nach EU-Produktsicherheitsverordnung (GPSR, VO (EU) 2023/988).
+   * Fehlende Werte werden auf der Produktseite als „wird ergänzt“ markiert.
+   */
+  manufacturer: z
+    .object({
+      name: z.string().optional(),
+      address: z.string().optional(),
+      email: z.string().optional(),
+      /** Verantwortliche Person in der EU, falls der Hersteller außerhalb der EU sitzt */
+      euResponsible: z.string().optional(),
+    })
+    .default({}),
+  /** Warn- und Sicherheitshinweise aus dem Datenblatt (GPSR) */
+  safetyNotes: z.array(z.string()).default([]),
+  /** Ausdrücklich passendes Zubehör (Produkt-IDs), ergänzt die Kompatibilitätsregeln */
+  accessoryIds: z.array(z.string()).default([]),
 });
 
 export type Product = z.infer<typeof productSchema>;

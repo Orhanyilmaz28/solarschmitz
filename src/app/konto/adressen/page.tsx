@@ -6,17 +6,23 @@ export const metadata: Metadata = { title: "Adressen", robots: { index: false, f
 export default function AddressesPage() {
   return (
     <AccountShell title="Adressen" active="/konto/adressen" lead="Speichere Rechnungs- und Lieferadressen, um beim Bestellen Zeit zu sparen.">
-      <div className="grid gap-4 sm:grid-cols-2">
+      <ul className="divide-y divide-line border-y border-line">
         {["Rechnungsadresse", "Lieferadresse"].map((t) => (
-          <div key={t} className="rounded-[var(--radius-card)] border border-dashed border-line bg-white p-6">
-            <p className="font-semibold">{t}</p>
-            <p className="mt-2 text-sm text-muted">Noch keine Adresse hinterlegt.</p>
-            <button type="button" disabled className="mt-5 h-10 rounded-full border border-line px-5 text-sm font-semibold text-muted disabled:cursor-not-allowed">
+          <li key={t} className="flex flex-col gap-4 py-6 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="t-h3 m-0">{t}</p>
+              <p className="mt-1.5 text-[15px] text-muted">Noch keine Adresse hinterlegt.</p>
+            </div>
+            <button
+              type="button"
+              disabled
+              className="inline-flex h-11 items-center self-start rounded-full border border-line px-5 text-sm font-semibold text-muted disabled:cursor-not-allowed sm:self-auto"
+            >
               Adresse hinzufügen
             </button>
-          </div>
+          </li>
         ))}
-      </div>
+      </ul>
     </AccountShell>
   );
 }

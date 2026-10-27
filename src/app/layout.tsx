@@ -8,9 +8,11 @@ import { Footer } from "@/components/layout/Footer";
 import { PreviewBanner } from "@/components/layout/PreviewBanner";
 import { Providers } from "@/components/Providers";
 import { CompareBar } from "@/components/shop/CompareBar";
+import { assertCatalogValid } from "@/lib/catalog/validate";
 
 const sora = Sora({ subsets: ["latin"], variable: "--font-sora", display: "swap" });
 const hanken = Hanken_Grotesk({ subsets: ["latin"], variable: "--font-hanken", display: "swap" });
+// Labels und Zahlen (auch im Hero sichtbar, daher vorab geladen)
 const jetbrains = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jetbrains", display: "swap", weight: ["400", "500"] });
 
 export const metadata: Metadata = {
@@ -33,6 +35,8 @@ export const viewport: Viewport = {
 const motionScript = `(function(){try{if(!window.matchMedia('(prefers-reduced-motion: reduce)').matches){document.documentElement.dataset.motion='on'}}catch(e){}})();`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  // Katalog beim Build gegen das Schema prüfen (bricht bei ungültigen Daten ab)
+  assertCatalogValid();
   return (
     <html lang="de" className={`${sora.variable} ${hanken.variable} ${jetbrains.variable}`} suppressHydrationWarning>
       <head>

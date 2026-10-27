@@ -31,6 +31,11 @@ export interface SimulationInput {
   /** Anschaffungskosten in Euro; null = unbekannt (dann keine Amortisation) */
   systemCostEUR: number | null;
   assumptions?: Partial<Assumptions>;
+  /**
+   * Jahresstromverbrauch des Haushalts in kWh (optional).
+   * Ist er gesetzt, kann der selbst genutzte Solarstrom ihn nicht übersteigen.
+   */
+  householdKWh?: number;
 }
 
 export interface SimulationResult {
@@ -50,6 +55,8 @@ export interface SimulationResult {
   /** Anteil, der durch die 800-W-Begrenzung verloren geht */
   clippingLoss: number;
   factors: { orientation: number; mounting: number };
+  /** Anteil des Haushaltsverbrauchs, der im ersten Jahr mit Solarstrom gedeckt wird (null ohne Verbrauchsangabe) */
+  coverage: number | null;
 }
 
 /**
@@ -72,15 +79,22 @@ export function simulate(input: SimulationInput): SimulationResult {
   const annualKWh = (input.totalWp / 1000) * a.specificYieldKWhPerKWp * orientation * mounting * (1 - clippingLoss);
   const share = clamp01(input.withStorage ? a.selfConsumptionWith : a.selfConsumptionWithout);
 
+  const household = input.householdKWh && input.householdKWh > 0 ? input.householdKWh : null;
+  /** Selbst genutzter Anteil, höchstens so viel wie der Haushalt verbraucht */
+  const selfUseOf = (production: number) => (household === null ? production * share : Math.min(production * share, household));
+
   const yearSavings = (year: number) => {
     const production = annualKWh * Math.pow(1 - a.degradationPct / 100, year - 1);
     const price = (a.electricityPriceCt / 100) * Math.pow(1 + a.priceIncreasePct / 100, year - 1);
-    return production * share * price + production * (1 - share) * (a.feedInTariffCt / 100);
+    const used = selfUseOf(production);
+    return used * price + (production - used) * (a.feedInTariffCt / 100);
   };
 
   const cost = input.systemCostEUR ?? 0;
-  const cashflow: SimulationResult["cashflow"] = [{ year: 0, cumulativeEUR: -cost }];
-  let cumulative = -cost;
+  // ohne Preis bei 0 starten (nicht bei -0, das würde als „-0 €" angezeigt)
+  const start = cost > 0 ? -cost : 0;
+  const cashflow: SimulationResult["cashflow"] = [{ year: 0, cumulativeEUR: start }];
+  let cumulative = start;
   let paybackYears: number | null = null;
   let total = 0;
   for (let y = 1; y <= a.years; y++) {
@@ -94,10 +108,11 @@ export function simulate(input: SimulationInput): SimulationResult {
     cashflow.push({ year: y, cumulativeEUR: cumulative });
   }
 
+  const usedFirstYear = selfUseOf(annualKWh);
   return {
     annualKWh,
-    selfUsedKWh: annualKWh * share,
-    feedInKWh: annualKWh * (1 - share),
+    selfUsedKWh: usedFirstYear,
+    feedInKWh: annualKWh - usedFirstYear,
     firstYearSavingsEUR: yearSavings(1),
     totalSavingsEUR: total,
     paybackYears,
@@ -105,6 +120,7 @@ export function simulate(input: SimulationInput): SimulationResult {
     cashflow,
     clippingLoss,
     factors: { orientation, mounting },
+    coverage: household === null ? null : usedFirstYear / household,
   };
 }
 

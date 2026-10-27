@@ -7,30 +7,62 @@ Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS 4, GSAP und Lenis f�
 Der Shop ist auf **Dropshipping** ausgelegt: Es gibt kein eigenes Lager, Bestellungen werden an Lieferanten weitergeleitet.
 Solange Zahlung, Versand und Lieferanten nicht angebunden sind, läuft die Seite im **Vorschau-Modus**. Bestellungen sind dann gesperrt, und das sagt die Seite auch offen.
 
-## Schnellstart
+## Lokal starten
+
+Voraussetzung: Node.js 20 oder neuer.
 
 ```bash
 npm install
-cp .env.example .env.local
-npm run dev          # http://localhost:3000
+cp .env.example .env.local   # Werte nach Bedarf ausfüllen, für die Vorschau reicht die Vorlage
+npm run dev                  # http://localhost:3000
+```
+
+Produktionsstand lokal prüfen:
+
+```bash
+npm run build && npm start   # http://localhost:3000
 ```
 
 | Befehl | Zweck |
 |---|---|
 | `npm run dev` | Entwicklungsserver |
 | `npm run build` / `npm start` | Produktions-Build und Start |
-| `npm test` | Tests (Rechner, Empfehlungen, Preisregeln, Import, Bestellungen) |
+| `npm test` | Tests (Rechner, Simulation, Empfehlungen, Preise, Steuer, Warenkorb, Bestellungen, Widerruf, Import) |
 | `npm run typecheck` | TypeScript-Prüfung |
-| `npm run logo` | Logo-SVGs aus dem Markennamen neu erzeugen |
+| `npm run logo` | Logo-Paket aus dem Markennamen neu erzeugen |
 | `npm run import:feed -- --supplier demo-feed --file data/supplier-feeds/demo-feed.csv` | Lieferanten-Feed testen (Vorschau, mit `--commit` übernehmen) |
 
 ## Was drin ist
 
-- **Startseite:** Hero mit animierter Szene (Haus mit Solardach im Abendlicht), Text-Reveal, Sonnenstrahlen, Parallax; Beispielrechnung; Produktwelt mit 6 Kategorien; Scroll-Storytelling „So einfach wird aus Sonnenlicht dein eigener Strom“; Produktfinder; Auswahl; Ratgeber; FAQ.
-- **Produktfinder** (`/konfigurator`): 6 Fragen → passende Sets, Zubehör, Simulation von Jahresproduktion, Ersparnis, Amortisation mit Diagrammen. Alle Annahmen sind sichtbar und änderbar (`src/config/solar-assumptions.ts`).
-- **Shop:** Produktübersicht mit Filtern und Suche, Kategorieseiten, Produktdetailseiten, Suche (auch als Overlay mit Strg+K), Produktvergleich, Warenkorb, Checkout in 5 Schritten (bis zur Freischaltung gesperrt), Kundenkonto-Struktur.
-- **Inhalte:** FAQ, Ratgeber (5 Artikel), Über uns, Kontakt, Versand, Rechtstexte als markierte Entwürfe.
-- **Lieferanten-Integration und Admin** (`/admin`): Adapter für CSV, XML, REST-API und E-Mail-Bestellung; Feld-Mapping, Preisregeln, Bestandsabgleich, Bestellweiterleitung, Versandstatus per Webhook, Sync-Protokoll. Details: [docs/LIEFERANTEN.md](docs/LIEFERANTEN.md).
+- **Startseite als Geschichte:**
+  - Cinematic Hero „Energie neu gedacht.“
+  - Kapitel 1 Licht: ein Junitag läuft beim Scrollen über einer Siedlung ab
+  - Produktwelt
+  - Kapitel 2: Modul im Schnitt mit Hotspots
+  - Kapitel 3: Speicher und Energieflüsse
+  - Kapitel 4: Energie-Dashboard
+  - Produktfinder, Auswahl, Vertrauen, Ratgeber, Fragen
+  - Kapitel 5 Morgen
+
+  Alle Zahlen stammen aus einer offen beschriebenen Beispielrechnung.
+- **Konfigurator 2.0** (`/konfigurator` und auf der Startseite):
+  - drei Fragen zu Ort, Unabhängigkeit und Priorität
+  - danach ein visuelles Ergebnis mit System, Ertrag, Ersparnis und Amortisation
+  - alle Annahmen änderbar
+- **Shop:**
+  - Produktübersicht mit Filtern und Suche (auch Strg+K), Kategorie- und Produktseiten, Vergleich
+  - Warenkorb mit Umsatzsteuer-Logik (0 % nur unter Voraussetzungen)
+  - Kasse mit Button-Lösung und wesentlichen Merkmalen, bis zur Freischaltung gesperrt
+  - Widerrufsfunktion „Vertrag widerrufen“ (§ 356a BGB)
+- **Navigation:**
+  - Kopfzeile transparent über dem Hero, danach helles oder dunkles Glas je nach Abschnitt
+  - Mega-Menü mit Vorschau, sichtbare Suche, Warenkorb-Status
+  - Vollbild-Menü am Handy
+- **Marke:**
+  - Logo-Paket (Signatur, Kompakt, Monogramm, Zeichen, Favicon, animiert)
+  - Übersicht mit Downloads unter `/marke`
+- **Inhalte:** FAQ, Ratgeber, Über uns, Kontakt, Versand (mit Batterie- und Altgeräte-Hinweisen), Rechtstexte als markierte Entwürfe.
+- **Lieferanten-Integration und Admin** (`/admin`): Details in [docs/LIEFERANTEN.md](docs/LIEFERANTEN.md).
 
 ## Wichtige Dateien
 
@@ -54,7 +86,7 @@ Jedes Produkt hat einen `dataStatus`, der in der Oberfläche sichtbar ist:
 
 1. Händlerkonditionen, Versandkosten und Lieferzeit mit eforu klären; in `src/config/site.ts` eintragen.
 2. Lieferanten-Feed oder API anbinden (`.env.local`, siehe docs/LIEFERANTEN.md) und importieren.
-3. Datenbank statt Datei-Speicher anbinden (`src/lib/store`), Zahlungsanbieter integrieren (`src/lib/payments`), Mailversand einrichten.
+3. Datenbank statt Datei-Speicher anbinden (`src/lib/store`), Zahlungsanbieter integrieren (`src/lib/payments`), Mailversand einrichten, `CONTACT_WEBHOOK_URL` und `WITHDRAWAL_WEBHOOK_URL` setzen (Eingangsbestätigung des Widerrufs per E-Mail testen).
 4. In `src/config/brand.ts` noch Registergericht/HRB-Nummer und ggf. USt-IdNr. eintragen. Rechtstexte anwaltlich prüfen lassen.
 5. Lizenzierte Fotos einbinden (siehe [docs/BILDER.md](docs/BILDER.md)).
 6. `site.previewMode` auf `false`, `CHECKOUT_ENABLED=true` und `PAYMENT_PROVIDER` setzen, erst nach Testbestellungen.
@@ -65,4 +97,5 @@ Jedes Produkt hat einen `dataStatus`, der in der Oberfläche sichtbar ist:
 - [docs/ARCHITEKTUR.md](docs/ARCHITEKTUR.md): Aufbau, Datenfluss, Animationen
 - [docs/LIEFERANTEN.md](docs/LIEFERANTEN.md): Lieferanten, Import, Preisregeln, Bestellungen, Webhooks
 - [docs/BILDER.md](docs/BILDER.md): fehlende Bilder und wie man sie einbindet
-- [docs/MARKE.md](docs/MARKE.md): Logo, Farben, Schriften
+- [docs/MARKE.md](docs/MARKE.md): Logo-Paket, Farben, Schriften, Bildsprache
+- [docs/UPGRADE-BERICHT.md](docs/UPGRADE-BERICHT.md): Premium-Upgrade: Änderungen, Animationen, Messwerte, offene Punkte

@@ -55,7 +55,7 @@
   --ease-in-out-soft: cubic-bezier(0.65, 0, 0.35, 1);
   --ease-cine: cubic-bezier(0.76, 0, 0.24, 1);
 
-  --animate-page-in: page-in 0.6s var(--ease-out-expo) both;
+  --animate-page-in: page-in 0.6s var(--ease-out-expo) backwards;
 }
 
 /* Abstände und Raster als Variablen (für eigene Komponenten) */
@@ -128,7 +128,7 @@
   /* ---------- Typografie-Skala ---------- */
   .t-hero {
     font-family: var(--font-display);
-    font-size: clamp(3rem, 9.2vw, 10rem);
+    font-size: clamp(2.9rem, 8.1vw, 9rem);
     font-weight: 700;
     line-height: 0.88;
     letter-spacing: -0.055em;
@@ -276,7 +276,9 @@ html[data-motion="on"] .reveal {
 }
 html[data-motion="on"] .reveal.is-in { opacity: 1; transform: none; }
 
-/* Zeilen-Reveal für große Überschriften: Zeile gleitet aus einer Maske */
+/* Zeilen-Reveal für große Überschriften: Zeile gleitet aus einer Maske.
+   Jede Zeile steht immer für sich, auch ohne Bewegung. */
+.line-reveal > .line { display: block; }
 html[data-motion="on"] .line-reveal > .line { display: block; overflow: hidden; padding-bottom: 0.08em; margin-bottom: -0.08em; }
 html[data-motion="on"] .line-reveal > .line > span {
   display: inline-block;
@@ -385,3 +387,66 @@ body::before {
   html[data-motion="on"] .line-reveal > .line > span { transform: none !important; }
   html[data-motion="on"] .clip-reveal { clip-path: none !important; }
 }
+
+/* ---------- Hero-Choreografie (läuft per CSS, ohne auf JavaScript zu warten) ---------- */
+.hero-title > .line { display: block; overflow: hidden; padding-bottom: 0.06em; margin-bottom: -0.06em; }
+.hero-title > .line > span { display: inline-block; }
+/* Das Bild steht sofort und unbewegt (zählt so für LCP); ein dunkler Schleier darüber blendet aus.
+   Keine Zoom- oder Transparenz-Animation am Bild selbst: Chrome würde LCP erst danach messen. */
+html[data-motion="on"] .hero-art::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  background: var(--color-night);
+  animation: hero-veil 1.6s var(--ease-out-expo) both;
+}
+html[data-motion="on"] .hero-title > .line > span {
+  animation: hero-line 1.25s var(--ease-out-expo) both;
+  animation-delay: calc(0.3s + var(--line, 0) * 0.12s);
+}
+html[data-motion="on"] .hero-fade { animation: hero-fade 1s var(--ease-out-expo) both; animation-delay: var(--d, 0s); }
+html[data-motion="on"] .hero-rays { animation: hero-fade 2.4s ease-out 0.6s both; }
+@keyframes hero-veil { from { opacity: 1; } to { opacity: 0; } }
+@keyframes hero-line { from { transform: translate3d(0, 108%, 0) rotate(1.5deg); } to { transform: none; } }
+@keyframes hero-fade { from { opacity: 0; transform: translate3d(0, 18px, 0); } to { opacity: 1; transform: none; } }
+
+/* Sonnenstrahlen, zentriert auf die Sonne der Szene */
+.hero-rays {
+  background: repeating-conic-gradient(from var(--ray-angle) at var(--sx, 80%) var(--sy, 30%), rgb(255 214 150 / 0.065) 0deg 2.5deg, transparent 2.5deg 10deg);
+  mask-image: radial-gradient(circle at var(--sx, 80%) var(--sy, 30%), #000 0%, transparent 52%);
+  -webkit-mask-image: radial-gradient(circle at var(--sx, 80%) var(--sy, 30%), #000 0%, transparent 52%);
+  mix-blend-mode: screen;
+}
+/* Strahlen stehen still: eine Dauer-Drehung per Verlauf müsste jedes Bild neu gemalt werden */
+html[data-motion="on"] .hero-rays { animation: hero-fade 2.4s ease-out 0.6s both; }
+
+/* Fenster gehen nacheinander an */
+html[data-motion="on"] .lw-win { animation: lw-win 0.9s steps(1, end) both, lw-win-fade 1.4s ease-out both; animation-delay: calc(1.25s + var(--i, 0) * 0.22s); }
+@keyframes lw-win { 0% { opacity: 0; } 30% { opacity: 0.5; } 45% { opacity: 0.1; } 60%, 100% { opacity: 1; } }
+@keyframes lw-win-fade { from { filter: brightness(0.6); } to { filter: none; } }
+
+/* Energielinie: ein heller Impuls wandert von der Sonne bis ins Haus */
+.lw-energy { stroke-dasharray: 0.14 1.2; stroke-dashoffset: 0.14; }
+html[data-motion="on"] .lw-energy { animation: lw-energy 4.8s cubic-bezier(0.55, 0.1, 0.25, 1) 1.5s infinite; }
+/* Außerhalb des Bildes pausieren Dauer-Animationen (data-inview setzt OffscreenPause) */
+section[data-inview="false"] *,
+section[data-inview="false"] *::before,
+section[data-inview="false"] *::after { animation-play-state: paused !important; }
+@keyframes lw-energy { 0% { stroke-dashoffset: 0.14; opacity: 0; } 8% { opacity: 1; } 62% { stroke-dashoffset: -1; opacity: 1; } 70%, 100% { stroke-dashoffset: -1; opacity: 0; } }
+
+/* Scroll-Hinweis */
+.hero-cue-arrow { animation: cue-bob 2.2s var(--ease-in-out-soft) 2s infinite; }
+@keyframes cue-bob { 0%, 100% { transform: translateY(-2px); } 50% { transform: translateY(3px); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .lw-energy { stroke-dasharray: none; opacity: 0.5; }
+  .hero-cue-arrow { animation: none; }
+}
+
+/* Abschnitte weit unten erst rendern, wenn sie in die Nähe kommen (spart Layout und Malen beim Laden).
+   Platzhalter = gemessene Inhaltshöhe ohne Innenabstand (--cv-d Desktop, --cv-m Handy);
+   nach dem ersten Rendern merkt sich der Browser die echte Höhe (auto). */
+.cv-auto { content-visibility: auto; contain-intrinsic-size: auto var(--cv-d, 1100px); }
+@media (max-width: 767px) { .cv-auto { contain-intrinsic-size: auto var(--cv-m, 1600px); } }

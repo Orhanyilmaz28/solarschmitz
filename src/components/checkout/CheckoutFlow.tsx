@@ -7,27 +7,31 @@ import { resolveCart } from "@/lib/cart/totals";
 import { addressSchema, checkoutSchema, contactSchema, fieldErrors } from "@/lib/checkout/schemas";
 import { formatEUR } from "@/lib/format";
 import { site } from "@/config/site";
-import { ProductVisual } from "@/components/illustrations/ProductVisual";
 import { Button, ButtonLink } from "@/components/ui/Button";
-import { Notice } from "@/components/content/Notice";
+import { Icon } from "@/components/ui/Icon";
 import { useCartHydrated } from "@/components/shop/useHydrated";
 import { Field } from "./Field";
 import { AddressFields, emptyAddress, type AddressDraft } from "./AddressFields";
+import { CheckboxRow } from "./CheckboxRow";
+import { VatQuestion, type VatAnswer } from "./VatQuestion";
+import { OrderReview } from "./OrderReview";
+import { OrderTotals } from "./OrderTotals";
+import { CheckoutSummary } from "./CheckoutSummary";
 
-const steps = [
-  { id: "kontakt", label: "Kontakt" },
-  { id: "adresse", label: "Adresse" },
-  { id: "versand", label: "Versand" },
-  { id: "zahlung", label: "Zahlung" },
-  { id: "pruefen", label: "Prüfen" },
-] as const;
+type StepId = "steuer" | "kontakt" | "adresse" | "versand" | "pruefen";
 
-const paymentMethods = [
-  { id: "paypal", label: "PayPal" },
-  { id: "karte", label: "Kredit- oder Debitkarte" },
-  { id: "rechnung", label: "Kauf auf Rechnung" },
-  { id: "vorkasse", label: "Vorkasse per Überweisung" },
-];
+const STEPS: Record<StepId, { label: string; title: string; cta: string }> = {
+  steuer: { label: "Umsatzsteuer", title: "Gilt für dich 0 % Umsatzsteuer?", cta: "Weiter zur Umsatzsteuer" },
+  kontakt: { label: "Kontakt", title: "Wie erreichen wir dich?", cta: "Weiter zum Kontakt" },
+  adresse: { label: "Adresse", title: "Rechnungs- und Lieferadresse", cta: "Weiter zur Adresse" },
+  versand: { label: "Versand & Zahlung", title: "Versand und Zahlung", cta: "Weiter zu Versand & Zahlung" },
+  pruefen: { label: "Prüfen & bestellen", title: "Prüfen und bestellen", cta: "Weiter zur Prüfung" },
+};
+
+const VAT_ERROR = "Bitte wähle Ja oder Nein. Davon hängt dein Endpreis ab.";
+const CONSENT_ERROR = "Bitte bestätige die AGB, damit wir deine Bestellung annehmen können.";
+// In der Kasse selbst ehrlich: was fehlt, ist noch nicht festgelegt (die Kasse ist dann gesperrt)
+const OPEN_TEXT = "noch nicht festgelegt";
 
 interface Props {
   /** Vom Server ermittelt: ist der Live-Checkout freigeschaltet? */
@@ -37,35 +41,68 @@ interface Props {
 export function CheckoutFlow({ checkoutEnabled }: Props) {
   const lines = useCart((s) => s.lines);
   const hydrated = useCartHydrated();
-  const totals = resolveCart(lines);
 
-  const [step, setStep] = useState(0);
-  const [reached, setReached] = useState(0);
+  const [vat, setVat] = useState<VatAnswer | null>(null);
+  const [currentRaw, setCurrent] = useState<StepId | null>(null);
+  const [done, setDone] = useState<StepId[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [contact, setContact] = useState({ email: "", phone: "" });
   const [billing, setBilling] = useState<AddressDraft>(emptyAddress);
   const [sameShipping, setSameShipping] = useState(true);
-  const [shipping, setShipping] = useState<AddressDraft>(emptyAddress);
+  const [shippingAddress, setShippingAddress] = useState<AddressDraft>(emptyAddress);
   const [note, setNote] = useState("");
-  const [acceptTerms, setAcceptTerms] = useState(false);
-  const [ackWithdrawal, setAckWithdrawal] = useState(false);
+  const [consent, setConsent] = useState(false);
+  const [summaryOpen, setSummaryOpen] = useState(false);
   const [submitState, setSubmitState] = useState<{ status: "idle" | "sending" | "error"; message?: string }>({ status: "idle" });
   const formRef = useRef<HTMLFormElement>(null);
 
-  if (!hydrated) return <div className="h-96 animate-pulse rounded-[var(--radius-card)] bg-mist" aria-label="Kasse wird geladen" />;
+  // Ohne Bestätigung gilt der Regelsteuersatz (resolveCart-Standard)
+  const standard = resolveCart(lines);
+  const zero = resolveCart(lines, { zeroRateConfirmed: true });
+  const eligible = standard.hasZeroRateEligible;
+  const zeroRateConfirmed = eligible && vat === "yes";
+  const totals = zeroRateConfirmed ? zero : standard;
 
-  if (totals.lines.length === 0) {
+  const stepIds: StepId[] = eligible ? ["steuer", "kontakt", "adresse", "versand", "pruefen"] : ["kontakt", "adresse", "versand", "pruefen"];
+  const current: StepId = currentRaw && stepIds.includes(currentRaw) ? currentRaw : stepIds[0]!;
+  const index = stepIds.indexOf(current);
+
+  if (!hydrated) {
     return (
-      <div className="rounded-[var(--radius-card)] border border-dashed border-line bg-white px-6 py-16 text-center">
-        <p className="display-md m-0 text-2xl">Dein Warenkorb ist leer</p>
-        <p className="mx-auto mt-3 max-w-[46ch] text-muted">Leg zuerst Produkte in den Warenkorb, dann kannst du hier die Bestellung vorbereiten.</p>
-        <div className="mt-7 flex justify-center">
-          <ButtonLink href="/produkte" variant="dark" arrow>
+      <div className="grid gap-10 lg:grid-cols-12" aria-busy="true" aria-label="Kasse wird geladen">
+        <div className="space-y-4 lg:col-span-7">
+          <div className="h-10 animate-pulse rounded-xl bg-stone" />
+          <div className="h-80 animate-pulse rounded-2xl bg-stone" />
+        </div>
+        <div className="h-96 animate-pulse rounded-[var(--radius-card)] bg-stone lg:col-span-5" />
+      </div>
+    );
+  }
+
+  if (standard.lines.length === 0) {
+    return (
+      <div className="max-w-[40rem]">
+        <p className="t-h2 m-0">Dein Warenkorb ist leer.</p>
+        <p className="t-lead mt-5 max-w-[46ch]">Leg zuerst Produkte in den Warenkorb, dann kannst du hier die Bestellung vorbereiten.</p>
+        <div className="mt-8 flex flex-wrap gap-3">
+          <ButtonLink href="/produkte" variant="dark" size="lg" arrow>
             Produkte ansehen
+          </ButtonLink>
+          <ButtonLink href="/konfigurator" variant="outline" size="lg">
+            Produktfinder
           </ButtonLink>
         </div>
       </div>
     );
+  }
+
+  const reduceMotion = () => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function showStep(id: StepId) {
+    requestAnimationFrame(() => {
+      document.getElementById(`step-${id}`)?.scrollIntoView({ behavior: reduceMotion() ? "auto" : "smooth", block: "start" });
+      document.getElementById(`step-${id}-title`)?.focus({ preventScroll: true });
+    });
   }
 
   function focusFirstError() {
@@ -74,62 +111,89 @@ export function CheckoutFlow({ checkoutEnabled }: Props) {
     });
   }
 
-  /** Prüft den aktuellen Schritt. Gibt true zurück, wenn alles gültig ist. */
-  function validateStep(index: number): boolean {
-    let next: Record<string, string> = {};
-    if (index === 0) {
-      const r = contactSchema.safeParse(contact);
-      if (!r.success) next = Object.fromEntries(Object.entries(fieldErrors(r.error)).map(([k, v]) => [`contact.${k}`, v]));
-    }
-    if (index === 1) {
-      const b = addressSchema.safeParse(billing);
-      if (!b.success) Object.assign(next, prefixed("billingAddress", fieldErrors(b.error)));
-      if (!sameShipping) {
-        const s = addressSchema.safeParse(shipping);
-        if (!s.success) Object.assign(next, prefixed("shippingAddress", fieldErrors(s.error)));
-      }
-    }
-    setErrors(next);
-    if (Object.keys(next).length) {
-      focusFirstError();
-      return false;
-    }
-    return true;
+  function goTo(id: StepId) {
+    setErrors({});
+    setSubmitState({ status: "idle" });
+    setCurrent(id);
+    showStep(id);
   }
 
-  function goNext() {
-    if (!validateStep(step)) return;
-    const n = Math.min(step + 1, steps.length - 1);
-    setStep(n);
-    setReached((r) => Math.max(r, n));
-    requestAnimationFrame(() => document.getElementById(`step-${steps[n]!.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  /** Fehler eines Schritts, leer = gültig */
+  function validate(id: StepId): Record<string, string> {
+    const out: Record<string, string> = {};
+    if (id === "steuer" && !vat) out.vat = VAT_ERROR;
+    if (id === "kontakt") {
+      const r = contactSchema.safeParse(contact);
+      if (!r.success) Object.assign(out, prefixed("contact", fieldErrors(r.error)));
+    }
+    if (id === "adresse") {
+      const b = addressSchema.safeParse(billing);
+      if (!b.success) Object.assign(out, prefixed("billingAddress", fieldErrors(b.error)));
+      if (!sameShipping) {
+        const s = addressSchema.safeParse(shippingAddress);
+        if (!s.success) Object.assign(out, prefixed("shippingAddress", fieldErrors(s.error)));
+      }
+    }
+    return out;
+  }
+
+  function next() {
+    const errs = validate(current);
+    setErrors(errs);
+    if (Object.keys(errs).length) {
+      focusFirstError();
+      return;
+    }
+    setDone((d) => (d.includes(current) ? d : [...d, current]));
+    const n = stepIds[index + 1];
+    if (n) {
+      setCurrent(n);
+      showStep(n);
+    }
   }
 
   async function submit(e: FormEvent) {
     e.preventDefault();
-    if (step !== steps.length - 1) {
-      goNext();
+    if (current !== "pruefen") {
+      next();
+      return;
+    }
+    // Alle Schritte erneut prüfen, falls zwischendurch etwas geändert wurde
+    for (const id of stepIds) {
+      if (id === "pruefen") continue;
+      const errs = validate(id);
+      if (Object.keys(errs).length) {
+        setErrors(errs);
+        setCurrent(id);
+        showStep(id);
+        focusFirstError();
+        return;
+      }
+    }
+    if (!consent) {
+      setErrors({ consent: CONSENT_ERROR });
+      focusFirstError();
       return;
     }
     const payload = {
       contact: { email: contact.email, phone: contact.phone || undefined },
       billingAddress: { ...billing, company: billing.company || undefined },
       shippingSameAsBilling: sameShipping,
-      shippingAddress: sameShipping ? undefined : { ...shipping, company: shipping.company || undefined },
+      shippingAddress: sameShipping ? undefined : { ...shippingAddress, company: shippingAddress.company || undefined },
       lines: lines.map((l) => ({ productId: l.productId, quantity: l.quantity })),
       note: note || undefined,
-      acceptTerms,
-      acknowledgeWithdrawal: ackWithdrawal,
+      // Eine Bestätigung deckt AGB und Kenntnisnahme der Widerrufsbelehrung ab
+      acceptTerms: consent,
+      acknowledgeWithdrawal: consent,
     };
     const parsed = checkoutSchema.safeParse(payload);
     if (!parsed.success) {
-      setErrors(fieldErrors(parsed.error));
-      focusFirstError();
+      handleFieldErrors(fieldErrors(parsed.error));
       return;
     }
     setErrors({});
     if (!checkoutEnabled) {
-      setSubmitState({ status: "error", message: "Der Checkout ist noch nicht freigeschaltet. Es wurde keine Bestellung ausgelöst." });
+      setSubmitState({ status: "error", message: "Die Kasse ist noch nicht freigeschaltet. Es wurde keine Bestellung ausgelöst." });
       return;
     }
     setSubmitState({ status: "sending" });
@@ -137,102 +201,96 @@ export function CheckoutFlow({ checkoutEnabled }: Props) {
       const res = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(parsed.data),
+        // Steuer-Angabe zusätzlich mitschicken (Server muss sie auswerten, siehe Übergabe)
+        body: JSON.stringify({ ...parsed.data, zeroRateConfirmed }),
       });
       const data = (await res.json().catch(() => ({}))) as { message?: string; fields?: Record<string, string>; payment?: { redirectUrl?: string } };
       if (res.ok && data.payment?.redirectUrl) {
         window.location.assign(data.payment.redirectUrl);
         return;
       }
-      if (data.fields) setErrors(data.fields);
+      if (data.fields) handleFieldErrors(data.fields);
       setSubmitState({ status: "error", message: data.message ?? "Die Bestellung konnte nicht angelegt werden. Bitte versuch es später erneut." });
     } catch {
       setSubmitState({ status: "error", message: "Keine Verbindung zum Server. Prüfe deine Internetverbindung und versuch es erneut." });
     }
   }
 
-  const summary = (
-    <aside aria-label="Bestellübersicht" className="min-w-0 lg:sticky lg:top-28 lg:self-start">
-      <div className="rounded-[var(--radius-card)] border border-line bg-white p-6">
-        <div className="flex items-baseline justify-between gap-4">
-          <h2 className="display-md m-0 text-xl">Deine Bestellung</h2>
-          <Link href="/warenkorb" className="text-sm font-semibold underline decoration-lime decoration-2 underline-offset-4">
-            Ändern
-          </Link>
-        </div>
-        <ul className="mt-5 divide-y divide-line">
-          {totals.lines.map(({ product, quantity, lineTotal }) => (
-            <li key={product.id} className="grid grid-cols-[52px_minmax(0,1fr)_auto] items-center gap-3 py-3">
-              <span className="relative block h-[52px] w-[52px] rounded-xl bg-mist p-1">
-                <ProductVisual visual={product.visual} title={product.name} className="h-full w-full" />
-                <span className="absolute -right-1.5 -top-1.5 grid h-5 min-w-5 place-items-center rounded-full bg-ink px-1 font-mono text-[11px] text-paper">
-                  {quantity}
-                </span>
-              </span>
-              <span className="line-clamp-2 text-sm font-medium">{product.name}</span>
-              <span className="font-mono text-sm tabular">{formatEUR(lineTotal)}</span>
-            </li>
-          ))}
-        </ul>
-        <dl className="mt-4 space-y-2 border-t border-line pt-4 text-[15px]">
-          <div className="flex justify-between gap-4">
-            <dt>Zwischensumme</dt>
-            <dd className="font-mono tabular">{formatEUR(totals.subtotal)}</dd>
-          </div>
-          <div className="flex justify-between gap-4">
-            <dt>Versand</dt>
-            <dd className="text-right text-muted">{totals.shipping === null ? "wird noch festgelegt" : formatEUR(totals.shipping)}</dd>
-          </div>
-          <div className="flex justify-between gap-4 border-t border-line pt-3 text-lg font-semibold">
-            <dt>Gesamt</dt>
-            <dd className="font-mono tabular">{formatEUR(totals.total)}</dd>
-          </div>
-        </dl>
-      </div>
-      {!checkoutEnabled && (
-        <Notice tone="preview" title="Vorschau" className="mt-4">
-          Du kannst alle Schritte ausprobieren. Eine Bestellung wird erst möglich, wenn Zahlung, Versand und Lieferanten angebunden sind.
-        </Notice>
-      )}
-    </aside>
-  );
+  /** Fehler dem passenden Schritt zuordnen und dorthin springen */
+  function handleFieldErrors(fe: Record<string, string>) {
+    const mapped: Record<string, string> = {};
+    for (const [k, v] of Object.entries(fe)) mapped[k === "acceptTerms" || k === "acknowledgeWithdrawal" ? "consent" : k] = v;
+    if (mapped.consent) mapped.consent = CONSENT_ERROR;
+    setErrors(mapped);
+    const first = Object.keys(mapped)[0] ?? "";
+    const target: StepId = first.startsWith("contact") ? "kontakt" : first.startsWith("billingAddress") || first.startsWith("shippingAddress") ? "adresse" : "pruefen";
+    if (target !== current) {
+      setCurrent(target);
+      showStep(target);
+    }
+    if (mapped.lines) setSubmitState({ status: "error", message: mapped.lines });
+    focusFirstError();
+  }
 
-  return (
-    <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-14">
-      <form ref={formRef} onSubmit={submit} noValidate className="min-w-0">
-        {/* Fortschritt */}
-        <ol className="mb-8 grid grid-cols-5 gap-2" aria-label="Schritte">
-          {steps.map((s, i) => {
-            const done = i < step;
-            const current = i === step;
-            const clickable = i <= reached && i !== step;
-            return (
-              <li key={s.id} className="min-w-0">
-                <button
-                  type="button"
-                  disabled={!clickable}
-                  onClick={() => setStep(i)}
-                  aria-current={current ? "step" : undefined}
-                  className="group block w-full text-left disabled:cursor-default"
-                >
-                  <span className={`block h-1.5 rounded-full transition-colors duration-500 ${done || current ? "bg-ink" : "bg-line"}`} />
-                  <span className={`mt-2 block truncate text-xs font-semibold sm:text-sm ${current ? "text-ink" : "text-muted"} ${clickable ? "group-hover:text-ink" : ""}`}>
-                    <span className="font-mono">{i + 1}</span> {s.label}
-                  </span>
-                </button>
-              </li>
-            );
-          })}
-        </ol>
+  const stateOf = (id: StepId): StepState => (id === current ? "current" : done.includes(id) ? "done" : "locked");
+  const shippingCost = totals.shipping === null ? OPEN_TEXT : totals.shipping === 0 ? "kostenlos" : formatEUR(totals.shipping);
+  const deliveryTime = site.shipping.deliveryTime ?? OPEN_TEXT;
+  const vatSummary = vat === "yes" ? "Ja: 0 % USt. auf Photovoltaik-Komponenten" : vat === "no" ? "Nein: 19 % USt. auf alle Artikel" : "";
+  const pendingNote =
+    eligible && !vat ? `Noch offen: Bis du die Frage zur Umsatzsteuer beantwortest, rechnen wir mit 19 % USt. Mit Nullsteuersatz: ${formatEUR(zero.total)}.` : undefined;
 
-        <div className="space-y-4">
-          <Step index={0} current={step} id="kontakt" title="Kontakt" summary={contact.email} onEdit={() => setStep(0)} reached={reached}>
-            <div className="grid gap-4 sm:grid-cols-2">
+  const stepSummary: Record<StepId, string> = {
+    steuer: vatSummary,
+    kontakt: [contact.email, contact.phone].filter(Boolean).join(" · "),
+    adresse: billing.lastName
+      ? `${billing.firstName} ${billing.lastName}, ${billing.street} ${billing.houseNumber}, ${billing.zip} ${billing.city}${sameShipping ? "" : " · abweichende Lieferadresse"}`
+      : "",
+    versand: "Standardversand durch den Lieferanten",
+    pruefen: "",
+  };
+
+  const backTo = (id: StepId) => {
+    const prev = stepIds[stepIds.indexOf(id) - 1];
+    return prev ? () => goTo(prev) : undefined;
+  };
+  const nextLabel = (id: StepId) => {
+    const n = stepIds[stepIds.indexOf(id) + 1];
+    return n ? STEPS[n].cta : "Weiter";
+  };
+
+  function content(id: StepId): ReactNode {
+    switch (id) {
+      case "steuer":
+        return (
+          <>
+            <VatQuestion
+              value={vat}
+              onChange={(v) => {
+                setVat(v);
+                setErrors((e) => {
+                  const { vat: _drop, ...rest } = e;
+                  return rest;
+                });
+              }}
+              error={errors.vat}
+              zeroTotal={zero.total}
+              standardTotal={standard.total}
+              mixed={standard.lines.some((l) => !l.zeroRateEligible)}
+              shippingKnown={standard.shipping !== null}
+            />
+            <StepNav onBack={backTo(id)} nextLabel={nextLabel(id)} />
+          </>
+        );
+      case "kontakt":
+        return (
+          <>
+            <div className="grid gap-5 sm:grid-cols-2">
               <Field
                 id="contact-email"
                 label="E-Mail-Adresse"
                 type="email"
                 autoComplete="email"
+                inputMode="email"
                 value={contact.email}
                 onChange={(v) => setContact({ ...contact, email: v })}
                 error={errors["contact.email"]}
@@ -248,90 +306,128 @@ export function CheckoutFlow({ checkoutEnabled }: Props) {
                 value={contact.phone}
                 onChange={(v) => setContact({ ...contact, phone: v })}
                 error={errors["contact.phone"]}
-                hint="Hilft bei Rückfragen zur Lieferung per Spedition."
+                hint="Hilft bei Rückfragen zur Lieferung."
+                className="sm:col-span-2 md:col-span-1"
               />
             </div>
-          </Step>
-
-          <Step
-            index={1}
-            current={step}
-            id="adresse"
-            title="Adresse"
-            summary={billing.lastName ? `${billing.firstName} ${billing.lastName}, ${billing.zip} ${billing.city}` : ""}
-            onEdit={() => setStep(1)}
-            reached={reached}
-          >
-            <p className="mb-4 text-sm font-semibold">Rechnungsadresse</p>
+            <StepNav onBack={backTo(id)} nextLabel={nextLabel(id)} />
+          </>
+        );
+      case "adresse":
+        return (
+          <>
+            <h3 className="t-label mb-4">Rechnungsadresse</h3>
             <AddressFields prefix="billing" value={billing} onChange={setBilling} errors={errors} errorPath="billingAddress" autoCompleteSection="billing" />
-            <label className="mt-6 flex cursor-pointer items-center gap-3 text-[15px]">
-              <input type="checkbox" checked={sameShipping} onChange={(e) => setSameShipping(e.target.checked)} className="h-5 w-5 accent-[var(--color-ink)]" />
-              Lieferadresse ist gleich Rechnungsadresse
-            </label>
+            <div className="mt-7">
+              <CheckboxRow id="same-shipping" checked={sameShipping} onChange={setSameShipping}>
+                Lieferung an die Rechnungsadresse
+              </CheckboxRow>
+            </div>
             {!sameShipping && (
-              <div className="mt-6 border-t border-line pt-6">
-                <p className="mb-4 text-sm font-semibold">Lieferadresse</p>
-                <AddressFields prefix="shipping" value={shipping} onChange={setShipping} errors={errors} errorPath="shippingAddress" autoCompleteSection="shipping" />
+              <div className="mt-7 border-t border-line pt-7">
+                <h3 className="t-label mb-4">Lieferadresse</h3>
+                <AddressFields
+                  prefix="shipping"
+                  value={shippingAddress}
+                  onChange={setShippingAddress}
+                  errors={errors}
+                  errorPath="shippingAddress"
+                  autoCompleteSection="shipping"
+                />
               </div>
             )}
-          </Step>
-
-          <Step index={2} current={step} id="versand" title="Versand" summary="Versand durch den Lieferanten" onEdit={() => setStep(2)} reached={reached}>
-            <fieldset>
-              <legend className="sr-only">Versandart</legend>
-              <label className="flex cursor-pointer items-start gap-4 rounded-2xl border-2 border-ink bg-white p-5">
-                <input type="radio" name="shipping-method" defaultChecked className="mt-1 h-5 w-5 accent-[var(--color-ink)]" />
-                <span className="min-w-0">
-                  <span className="block font-semibold">Standardversand durch den Lieferanten</span>
-                  <span className="mt-1 block text-sm text-muted">{site.shipping.carrierNote}</span>
-                  <span className="mt-2 block text-sm">
-                    Kosten: <strong>{site.shipping.flatRateEUR !== null ? formatEUR(site.shipping.flatRateEUR) : "wird noch festgelegt"}</strong> · Lieferzeit:{" "}
-                    <strong>{site.shipping.deliveryTime ?? "wird noch festgelegt"}</strong>
+            <StepNav onBack={backTo(id)} nextLabel={nextLabel(id)} />
+          </>
+        );
+      case "versand":
+        return (
+          <>
+            <div className="space-y-9">
+              <section aria-labelledby="shipping-method-title">
+                <h3 id="shipping-method-title" className="t-label">
+                  Versand
+                </h3>
+                <div className="mt-3 flex items-start gap-4 rounded-2xl border border-ink bg-white p-5 shadow-[0_0_0_1px_var(--color-ink)]">
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-stone">
+                    <Icon name="truck" size={20} />
                   </span>
-                </span>
-              </label>
-            </fieldset>
-            <p className="mt-4 text-sm text-muted">
-              Bestellungen mit Produkten verschiedener Lieferanten kommen in getrennten Sendungen. Jede bekommt eine eigene Sendungsnummer.
+                  <div className="min-w-0">
+                    <p className="font-semibold">Standardversand durch den Lieferanten</p>
+                    <p className="mt-1 text-sm text-muted">{site.shipping.carrierNote}</p>
+                    <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
+                      <div>
+                        <dt className="text-muted">Versandkosten</dt>
+                        <dd className="mt-0.5 font-semibold">{shippingCost}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-muted">Lieferzeit</dt>
+                        <dd className="mt-0.5 font-semibold">{deliveryTime}</dd>
+                      </div>
+                    </dl>
+                  </div>
+                </div>
+                <p className="mt-3 text-sm text-muted">
+                  Kommen Artikel von verschiedenen Lieferanten, erhältst du getrennte Sendungen mit eigener Sendungsnummer. Wir liefern nur innerhalb
+                  Deutschlands.
+                </p>
+              </section>
+              <section aria-labelledby="payment-title">
+                <h3 id="payment-title" className="t-label">
+                  Zahlung
+                </h3>
+                <div className="mt-3 flex items-start gap-4 rounded-2xl border border-dashed border-ink/20 p-5">
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-stone">
+                    <Icon name="euro" size={20} />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="font-semibold">{checkoutEnabled ? "Zahlung beim Zahlungsanbieter" : "Zahlungsarten werden eingerichtet"}</p>
+                    <p className="mt-1 text-sm text-muted">
+                      {checkoutEnabled
+                        ? "Nach dem Absenden leiten wir dich zur Zahlung an unseren Zahlungsanbieter weiter."
+                        : "Nach dem Absenden leiten wir dich zur Zahlung an unseren Zahlungsanbieter weiter. Welche Zahlungsarten du dort wählen kannst, steht hier, sobald die Zahlung eingerichtet ist."}
+                    </p>
+                  </div>
+                </div>
+              </section>
+            </div>
+            <StepNav onBack={backTo(id)} nextLabel={nextLabel(id)} />
+          </>
+        );
+      case "pruefen":
+        return (
+          <div className="space-y-10">
+            <p className="max-w-[60ch] text-[15px] text-muted">
+              Bitte prüfe deine Angaben. Über „Ändern“ kannst du jeden Schritt vor dem Absenden korrigieren.
             </p>
-          </Step>
 
-          <Step index={3} current={step} id="zahlung" title="Zahlung" summary="Zahlungsarten in Vorbereitung" onEdit={() => setStep(3)} reached={reached}>
-            <fieldset>
-              <legend className="mb-4 text-sm text-muted">Die Zahlungsabwicklung wird gerade angebunden. Diese Zahlungsarten sind geplant:</legend>
-              <div className="grid gap-3 sm:grid-cols-2">
-                {paymentMethods.map((m) => (
-                  <label key={m.id} className="flex cursor-not-allowed items-center gap-3 rounded-2xl border border-line bg-mist/60 p-4 text-muted">
-                    <input type="radio" name="payment" disabled className="h-5 w-5" />
-                    <span className="min-w-0">
-                      <span className="block font-semibold text-ink/70">{m.label}</span>
-                      <span className="text-xs">in Vorbereitung</span>
-                    </span>
-                  </label>
-                ))}
-              </div>
-            </fieldset>
-          </Step>
-
-          <Step index={4} current={step} id="pruefen" title="Prüfen und bestellen" onEdit={() => setStep(4)} reached={reached}>
-            <div className="grid gap-4 text-sm sm:grid-cols-2">
-              <ReviewBlock title="Kontakt" onEdit={() => setStep(0)}>
+            <dl className="grid gap-x-8 gap-y-6 text-[15px] sm:grid-cols-2">
+              {eligible && (
+                <ReviewItem title="Umsatzsteuer" onEdit={() => goTo("steuer")}>
+                  {vatSummary}
+                </ReviewItem>
+              )}
+              <ReviewItem title="Kontakt" onEdit={() => goTo("kontakt")}>
                 <p>{contact.email}</p>
                 {contact.phone && <p>{contact.phone}</p>}
-              </ReviewBlock>
-              <ReviewBlock title="Rechnungsadresse" onEdit={() => setStep(1)}>
+              </ReviewItem>
+              <ReviewItem title="Rechnungsadresse" onEdit={() => goTo("adresse")}>
                 <AddressLines a={billing} />
-              </ReviewBlock>
-              <ReviewBlock title="Lieferadresse" onEdit={() => setStep(1)}>
-                {sameShipping ? <p>wie Rechnungsadresse</p> : <AddressLines a={shipping} />}
-              </ReviewBlock>
-              <ReviewBlock title="Versand & Zahlung" onEdit={() => setStep(2)}>
+              </ReviewItem>
+              <ReviewItem title="Lieferadresse" onEdit={() => goTo("adresse")}>
+                {sameShipping ? <p>wie Rechnungsadresse</p> : <AddressLines a={shippingAddress} />}
+              </ReviewItem>
+              <ReviewItem title="Versand und Lieferzeit" onEdit={() => goTo("versand")}>
                 <p>Standardversand durch den Lieferanten</p>
-                <p className="text-muted">Zahlung: in Vorbereitung</p>
-              </ReviewBlock>
-            </div>
+                <p className="text-muted">
+                  Versandkosten: {shippingCost} · Lieferzeit: {deliveryTime}
+                </p>
+              </ReviewItem>
+              <ReviewItem title="Zahlung" onEdit={() => goTo("versand")}>
+                <p>{checkoutEnabled ? "beim Zahlungsanbieter nach dem Absenden" : "wird eingerichtet"}</p>
+              </ReviewItem>
+            </dl>
 
-            <div className="mt-6">
+            <div>
               <label htmlFor="order-note" className="field-label">
                 Hinweis zur Bestellung <span className="font-normal text-muted">(optional)</span>
               </label>
@@ -341,167 +437,255 @@ export function CheckoutFlow({ checkoutEnabled }: Props) {
                 maxLength={500}
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
-                className="field-input"
+                className="field-input min-h-[104px] resize-y"
                 aria-invalid={errors.note ? true : undefined}
+                aria-describedby={errors.note ? "order-note-error" : undefined}
               />
-              {errors.note && <p className="field-error">{errors.note}</p>}
-            </div>
-
-            <div className="mt-6 space-y-3">
-              <Check
-                id="accept-terms"
-                checked={acceptTerms}
-                onChange={setAcceptTerms}
-                error={errors.acceptTerms}
-                label={
-                  <>
-                    Ich akzeptiere die{" "}
-                    <Link href="/agb" className="font-semibold underline underline-offset-4" target="_blank">
-                      AGB
-                    </Link>{" "}
-                    und habe die{" "}
-                    <Link href="/datenschutz" className="font-semibold underline underline-offset-4" target="_blank">
-                      Datenschutzerklärung
-                    </Link>{" "}
-                    gelesen.
-                  </>
-                }
-              />
-              <Check
-                id="ack-withdrawal"
-                checked={ackWithdrawal}
-                onChange={setAckWithdrawal}
-                error={errors.acknowledgeWithdrawal}
-                label={
-                  <>
-                    Ich habe die{" "}
-                    <Link href="/widerruf" className="font-semibold underline underline-offset-4" target="_blank">
-                      Widerrufsbelehrung
-                    </Link>{" "}
-                    zur Kenntnis genommen.
-                  </>
-                }
-              />
-            </div>
-
-            {!checkoutEnabled && (
-              <Notice tone="preview" title="Der Checkout ist noch nicht freigeschaltet" className="mt-6">
-                Bestellungen sind möglich, sobald Zahlung, Versand und Lieferantenanbindung eingerichtet und getestet sind. Deine Angaben werden nicht
-                gespeichert oder übertragen.
-              </Notice>
-            )}
-            {submitState.status === "error" && submitState.message && (
-              <p role="alert" className="mt-4 rounded-xl bg-[#fdf1ec] px-4 py-3 text-sm font-semibold text-danger">
-                {submitState.message}
-              </p>
-            )}
-
-            <div className="mt-6">
-              <Button
-                type="submit"
-                variant="primary"
-                size="lg"
-                className="w-full sm:w-auto"
-                disabled={!checkoutEnabled || submitState.status === "sending"}
-                aria-describedby={!checkoutEnabled ? "checkout-disabled-hint" : undefined}
-              >
-                {submitState.status === "sending" ? "Wird gesendet …" : "Zahlungspflichtig bestellen"}
-              </Button>
-              {!checkoutEnabled && (
-                <p id="checkout-disabled-hint" className="mt-2 text-xs text-muted">
-                  Dieser Knopf wird aktiv, sobald der Checkout freigeschaltet ist.
+              {errors.note && (
+                <p id="order-note-error" className="field-error">
+                  {errors.note}
                 </p>
               )}
             </div>
-          </Step>
+
+            <section aria-labelledby="review-items-title">
+              <h3 id="review-items-title" className="t-label">
+                Deine Bestellung
+              </h3>
+              <div className="mt-3">
+                <OrderReview totals={totals} />
+              </div>
+              <div className="mt-6 sm:ml-auto sm:max-w-[400px]">
+                <OrderTotals totals={totals} openShippingText={OPEN_TEXT} />
+              </div>
+            </section>
+
+            <div className="space-y-5 border-t border-line pt-8">
+              <CheckboxRow
+                id="consent"
+                checked={consent}
+                onChange={(v) => {
+                  setConsent(v);
+                  if (v)
+                    setErrors((e) => {
+                      const { consent: _drop, ...rest } = e;
+                      return rest;
+                    });
+                }}
+                error={errors.consent}
+              >
+                Ich habe die{" "}
+                <Link href="/agb" target="_blank" rel="noopener" className="font-semibold underline underline-offset-4">
+                  AGB<span className="sr-only"> (öffnet in neuem Tab)</span>
+                </Link>{" "}
+                gelesen und bin mit ihrer Geltung einverstanden. Die{" "}
+                <Link href="/widerruf" target="_blank" rel="noopener" className="font-semibold underline underline-offset-4">
+                  Widerrufsbelehrung<span className="sr-only"> (öffnet in neuem Tab)</span>
+                </Link>{" "}
+                habe ich zur Kenntnis genommen.
+              </CheckboxRow>
+              <p className="pl-[38px] text-sm text-muted">
+                Wie wir deine Daten für die Bestellung verarbeiten, steht in der{" "}
+                <Link href="/datenschutz" target="_blank" rel="noopener" className="underline underline-offset-4 hover:text-ink">
+                  Datenschutzerklärung<span className="sr-only"> (öffnet in neuem Tab)</span>
+                </Link>
+                .
+              </p>
+            </div>
+
+            <div>
+              {submitState.status === "error" && submitState.message && (
+                <p role="alert" className="mb-5 rounded-xl bg-[#fdf1ec] px-4 py-3 text-sm font-semibold text-danger">
+                  {submitState.message}
+                </p>
+              )}
+              <div className="flex sm:justify-end">
+                <Button
+                  type="submit"
+                  variant="primary"
+                  size="lg"
+                  className="w-full sm:w-auto sm:min-w-[300px]"
+                  disabled={!checkoutEnabled || submitState.status === "sending"}
+                  aria-describedby={!checkoutEnabled ? "order-button-hint" : undefined}
+                >
+                  {submitState.status === "sending" ? "Wird gesendet …" : "Zahlungspflichtig bestellen"}
+                </Button>
+              </div>
+              {!checkoutEnabled && (
+                <p id="order-button-hint" className="mt-3 text-[13px] text-muted sm:text-right">
+                  Der Knopf wird aktiv, sobald die Kasse freigeschaltet ist. Bis dahin wird keine Bestellung ausgelöst.
+                </p>
+              )}
+              <div className="mt-6">
+                <button type="button" onClick={backTo("pruefen")} className="inline-flex h-11 items-center gap-2 text-sm font-semibold text-muted hover:text-ink">
+                  <Icon name="arrow-right" size={16} className="rotate-180" />
+                  Zurück
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+    }
+  }
+
+  return (
+    <div className="grid gap-x-16 gap-y-6 lg:grid-cols-12">
+      {/* Mobil: Bestellübersicht zum Aufklappen */}
+      <div className="lg:hidden">
+        <button
+          type="button"
+          aria-expanded={summaryOpen}
+          aria-controls="checkout-summary"
+          onClick={() => setSummaryOpen((o) => !o)}
+          className="flex min-h-[60px] w-full items-center justify-between gap-4 rounded-2xl border border-line bg-white px-5 py-3 text-left"
+        >
+          <span className="flex items-center gap-3 text-[15px] font-semibold">
+            <Icon name="cart" size={20} />
+            {summaryOpen ? "Übersicht ausblenden" : "Bestellübersicht"}
+          </span>
+          <span className="flex items-center gap-2">
+            <span className="font-semibold tabular">{formatEUR(totals.total)}</span>
+            <Icon name="chevron-down" size={18} className={`transition-transform duration-300 ${summaryOpen ? "rotate-180" : ""}`} />
+          </span>
+        </button>
+      </div>
+
+      <aside
+        id="checkout-summary"
+        aria-label="Bestellübersicht"
+        className={`${summaryOpen ? "block" : "hidden"} min-w-0 lg:col-span-5 lg:col-start-8 lg:row-start-1 lg:block`}
+      >
+        <div className="lg:sticky lg:top-28">
+          <CheckoutSummary totals={totals} pendingNote={pendingNote} checkoutEnabled={checkoutEnabled} />
+        </div>
+      </aside>
+
+      <form ref={formRef} onSubmit={submit} noValidate className="min-w-0 lg:col-span-7 lg:col-start-1 lg:row-start-1">
+        <div className="pb-6">
+          <div className="flex items-baseline justify-between gap-4">
+            <p className="t-label">
+              Schritt {index + 1} von {stepIds.length}
+            </p>
+            <p className="text-sm font-medium">{STEPS[current].label}</p>
+          </div>
+          <div aria-hidden className="mt-3 grid gap-1.5" style={{ gridTemplateColumns: `repeat(${stepIds.length}, minmax(0, 1fr))` }}>
+            {stepIds.map((id, i) => (
+              <span key={id} className={`h-1 rounded-full transition-colors duration-500 ${i <= index ? "bg-ink" : "bg-line"}`} />
+            ))}
+          </div>
         </div>
 
-        {step < steps.length - 1 && (
-          <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
-            {step > 0 ? (
-              <button type="button" onClick={() => setStep(step - 1)} className="text-sm font-semibold text-muted hover:text-ink">
-                ← Zurück
-              </button>
-            ) : (
-              <Link href="/warenkorb" className="text-sm font-semibold text-muted hover:text-ink">
-                ← Zum Warenkorb
-              </Link>
-            )}
-            <Button type="submit" variant="dark" size="lg" arrow>
-              Weiter zu {steps[step + 1]!.label}
-            </Button>
-          </div>
-        )}
+        {stepIds.map((id, i) => (
+          <Step
+            key={id}
+            id={id}
+            number={i + 1}
+            label={STEPS[id].label}
+            title={STEPS[id].title}
+            state={stateOf(id)}
+            summary={stepSummary[id]}
+            onEdit={() => goTo(id)}
+          >
+            {id === current ? content(id) : null}
+          </Step>
+        ))}
       </form>
-      {summary}
     </div>
   );
 }
+
+type StepState = "current" | "done" | "locked";
 
 function prefixed(prefix: string, errs: Record<string, string>): Record<string, string> {
   return Object.fromEntries(Object.entries(errs).map(([k, v]) => [`${prefix}.${k}`, v]));
 }
 
 function Step({
-  index,
-  current,
-  reached,
   id,
+  number,
+  label,
   title,
+  state,
   summary,
   onEdit,
   children,
 }: {
-  index: number;
-  current: number;
-  reached: number;
-  id: string;
+  id: StepId;
+  number: number;
+  label: string;
   title: string;
+  state: StepState;
   summary?: string;
   onEdit: () => void;
   children: ReactNode;
 }) {
-  const open = index === current;
-  const done = index < current || (index <= reached && index !== current);
+  const open = state === "current";
   return (
-    <section
-      id={`step-${id}`}
-      aria-labelledby={`step-${id}-title`}
-      className={`scroll-mt-28 rounded-[var(--radius-card)] border bg-white transition-colors ${open ? "border-ink/20 shadow-[var(--shadow-soft)]" : "border-line"}`}
-    >
-      <div className="flex items-center justify-between gap-4 px-6 py-5">
-        <h2 id={`step-${id}-title`} className="m-0 flex min-w-0 items-center gap-3 font-sans text-lg font-semibold tracking-normal">
-          <span
-            className={`grid h-8 w-8 shrink-0 place-items-center rounded-full font-mono text-sm ${
-              open ? "bg-ink text-paper" : done ? "bg-lime text-ink" : "bg-mist text-muted"
-            }`}
-          >
-            {done && !open ? "✓" : index + 1}
-          </span>
-          <span className="truncate">{title}</span>
+    <section id={`step-${id}`} aria-labelledby={`step-${id}-title`} className="scroll-mt-28 border-t border-line py-7 last:border-b md:py-9">
+      <div className="flex items-center gap-4">
+        <span
+          aria-hidden
+          className={`grid h-9 w-9 shrink-0 place-items-center rounded-full text-[13px] font-semibold transition-colors duration-300 ${
+            open ? "bg-ink text-paper" : state === "done" ? "border border-ink/15 bg-white text-ink" : "bg-stone text-muted"
+          }`}
+        >
+          {state === "done" ? <Icon name="check" size={16} strokeWidth={2.2} /> : <span className="font-mono">{String(number).padStart(2, "0")}</span>}
+        </span>
+        <h2
+          id={`step-${id}-title`}
+          tabIndex={-1}
+          className={`m-0 min-w-0 flex-1 outline-none ${open ? "t-h3" : "text-[17px] font-semibold tracking-[-0.01em]"} ${state === "locked" ? "text-muted" : ""}`}
+        >
+          <span className="sr-only">Schritt {number}: </span>
+          {open ? title : label}
         </h2>
-        {!open && done && (
-          <button type="button" onClick={onEdit} className="shrink-0 text-sm font-semibold underline decoration-lime decoration-2 underline-offset-4">
-            Bearbeiten
+        {state === "done" && (
+          <button
+            type="button"
+            onClick={onEdit}
+            className="-mr-2 inline-flex h-10 shrink-0 items-center px-2 text-sm font-semibold underline decoration-ink/25 underline-offset-4 hover:decoration-ink"
+          >
+            Ändern<span className="sr-only">: {label}</span>
           </button>
         )}
       </div>
-      {!open && done && summary && <p className="-mt-2 truncate px-6 pb-5 pl-[68px] text-sm text-muted">{summary}</p>}
-      {open && <div className="border-t border-line px-6 py-6">{children}</div>}
+      {state === "done" && summary && <p className="mt-2 truncate pl-[52px] text-sm text-muted">{summary}</p>}
+      {open && <div className="mt-7 md:pl-[52px]">{children}</div>}
     </section>
   );
 }
 
-function ReviewBlock({ title, onEdit, children }: { title: string; onEdit: () => void; children: ReactNode }) {
+function StepNav({ onBack, nextLabel }: { onBack?: () => void; nextLabel: string }) {
   return (
-    <div className="rounded-2xl bg-mist/70 p-4">
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <p className="font-semibold">{title}</p>
-        <button type="button" onClick={onEdit} className="text-xs font-semibold text-muted underline underline-offset-4 hover:text-ink">
-          Ändern
+    <div className="mt-9 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
+      {onBack ? (
+        <button type="button" onClick={onBack} className="inline-flex h-11 items-center justify-center gap-2 text-sm font-semibold text-muted hover:text-ink sm:justify-start">
+          <Icon name="arrow-right" size={16} className="rotate-180" />
+          Zurück
         </button>
-      </div>
-      <div className="space-y-0.5 text-ink/80">{children}</div>
+      ) : (
+        <Link href="/warenkorb" className="inline-flex h-11 items-center justify-center gap-2 text-sm font-semibold text-muted hover:text-ink sm:justify-start">
+          <Icon name="arrow-right" size={16} className="rotate-180" />
+          Zum Warenkorb
+        </Link>
+      )}
+      <Button type="submit" variant="dark" size="lg" arrow className="w-full sm:w-auto">
+        {nextLabel}
+      </Button>
+    </div>
+  );
+}
+
+function ReviewItem({ title, onEdit, children }: { title: string; onEdit: () => void; children: ReactNode }) {
+  return (
+    <div className="min-w-0 border-t border-line pt-4">
+      <dt className="flex items-center justify-between gap-3">
+        <span className="t-label">{title}</span>
+        <button type="button" onClick={onEdit} className="-my-2 inline-flex h-10 items-center text-sm font-semibold text-muted underline underline-offset-4 hover:text-ink">
+          Ändern<span className="sr-only">: {title}</span>
+        </button>
+      </dt>
+      <dd className="mt-2 space-y-0.5 text-ink/85">{children}</dd>
     </div>
   );
 }
@@ -521,29 +705,5 @@ function AddressLines({ a }: { a: AddressDraft }) {
       </p>
       <p>Deutschland</p>
     </>
-  );
-}
-
-function Check({ id, checked, onChange, label, error }: { id: string; checked: boolean; onChange: (v: boolean) => void; label: ReactNode; error?: string }) {
-  return (
-    <div>
-      <div className="flex items-start gap-3 text-[15px]">
-        <input
-          id={id}
-          type="checkbox"
-          checked={checked}
-          onChange={(e) => onChange(e.target.checked)}
-          aria-invalid={error ? true : undefined}
-          aria-describedby={error ? `${id}-error` : undefined}
-          className="mt-0.5 h-5 w-5 shrink-0 accent-[var(--color-ink)]"
-        />
-        <label htmlFor={id}>{label}</label>
-      </div>
-      {error && (
-        <p id={`${id}-error`} className="field-error ml-8">
-          {error}
-        </p>
-      )}
-    </div>
   );
 }

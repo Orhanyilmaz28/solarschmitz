@@ -19,6 +19,9 @@ export const seedProducts: ProductInput[] = [
   // ---------- Balkonkraftwerke ----------
   {
     id: "p-eforu-set-880",
+    family: "bkw-880",
+    variantLabel: "Ohne Speicher",
+    manufacturer: { name: "E.FOR.U GmbH" },
     slug: "komplettset-balkonkraftwerk-880w-bifazial",
     sku: "SS-BKW-880",
     name: "Komplettset Balkonkraftwerk 880 W, bifazial Glas-Glas",
@@ -41,6 +44,8 @@ export const seedProducts: ProductInput[] = [
   },
   {
     id: "p-demo-set-1760",
+    family: "demo-bkw-1760",
+    variantLabel: "Ohne Speicher",
     slug: "demo-balkonkraftwerk-1760wp-4-module",
     sku: "DEMO-BKW-1760",
     name: "Demo: Balkonkraftwerk 1.760 Wp mit 4 Modulen",
@@ -64,6 +69,9 @@ export const seedProducts: ProductInput[] = [
   // ---------- Balkonkraftwerke mit Speicher ----------
   {
     id: "p-eforu-set-880-e1600",
+    family: "bkw-880",
+    variantLabel: "Mit Speicher 1,6 kWh",
+    manufacturer: { name: "E.FOR.U GmbH" },
     slug: "komplettset-880w-mit-anker-solix-e1600",
     sku: "SS-BKWS-880-1600",
     name: "Komplettset 880 W mit Anker SOLIX E1600 Speicher",
@@ -90,6 +98,8 @@ export const seedProducts: ProductInput[] = [
   },
   {
     id: "p-demo-set-1760-storage",
+    family: "demo-bkw-1760",
+    variantLabel: "Mit Speicher 2,7 kWh",
     slug: "demo-balkonkraftwerk-1760wp-mit-2-7-kwh-speicher",
     sku: "DEMO-BKWS-1760-27",
     name: "Demo: Set 1.760 Wp mit 2,7-kWh-Speicher",
@@ -113,6 +123,8 @@ export const seedProducts: ProductInput[] = [
   // ---------- Solarmodule ----------
   {
     id: "p-demo-module-440",
+    family: "demo-modul",
+    variantLabel: "440 Wp bifazial",
     slug: "demo-solarmodul-440wp-glas-glas-bifazial",
     sku: "DEMO-MOD-440",
     name: "Demo: Solarmodul 440 Wp Glas-Glas bifazial",
@@ -133,6 +145,8 @@ export const seedProducts: ProductInput[] = [
   },
   {
     id: "p-demo-module-500-black",
+    family: "demo-modul",
+    variantLabel: "500 Wp Full Black",
     slug: "demo-solarmodul-500wp-full-black",
     sku: "DEMO-MOD-500B",
     name: "Demo: Solarmodul 500 Wp Full Black",
@@ -155,6 +169,7 @@ export const seedProducts: ProductInput[] = [
   // ---------- Batteriespeicher ----------
   {
     id: "p-anker-sb3-e2700pro",
+    manufacturer: { name: "Anker Innovations" },
     slug: "anker-solix-solarbank-3-e2700-pro",
     sku: "SS-ANK-SB3-2700",
     name: "Anker SOLIX Solarbank 3 E2700 Pro inkl. Smart Meter",
@@ -177,6 +192,9 @@ export const seedProducts: ProductInput[] = [
   },
   {
     id: "p-anker-sb2-e1600ac",
+    family: "anker-solarbank-2-e1600",
+    variantLabel: "AC mit Smart Meter",
+    manufacturer: { name: "Anker Innovations" },
     slug: "anker-solix-solarbank-2-e1600-ac",
     sku: "SS-ANK-SB2-1600AC",
     name: "Anker SOLIX Solarbank 2 E1600 AC inkl. Smart Meter",
@@ -202,6 +220,9 @@ export const seedProducts: ProductInput[] = [
   },
   {
     id: "p-anker-sb2-e1600pro",
+    family: "anker-solarbank-2-e1600",
+    variantLabel: "Pro",
+    manufacturer: { name: "Anker Innovations" },
     slug: "anker-solix-solarbank-2-e1600-pro",
     sku: "SS-ANK-SB2-1600PRO",
     name: "Anker SOLIX Solarbank 2 E1600 Pro",
@@ -224,6 +245,7 @@ export const seedProducts: ProductInput[] = [
   },
   {
     id: "p-anker-sbmax-ac-7000",
+    manufacturer: { name: "Anker Innovations" },
     slug: "anker-solix-solarbank-max-ac-7000wh",
     sku: "SS-ANK-SBMAX-7000",
     name: "Anker SOLIX Solarbank Max AC Speicher 7000 Wh",
@@ -245,6 +267,7 @@ export const seedProducts: ProductInput[] = [
   },
   {
     id: "p-ecoflow-stream-ultrax",
+    manufacturer: { name: "EcoFlow" },
     slug: "ecoflow-stream-ultrax-speicher",
     sku: "SS-ECO-STREAM-UX",
     name: "EcoFlow STREAM UltraX Speicher",
@@ -265,6 +288,7 @@ export const seedProducts: ProductInput[] = [
   },
   {
     id: "p-zendure-solarflow-800-plus",
+    manufacturer: { name: "Zendure" },
     slug: "zendure-solarflow-800-plus",
     sku: "SS-ZEN-SF800P",
     name: "Zendure SolarFlow 800 Plus",
@@ -288,6 +312,7 @@ export const seedProducts: ProductInput[] = [
   // ---------- Wechselrichter ----------
   {
     id: "p-apsystems-ez1m",
+    manufacturer: { name: "APsystems" },
     slug: "wechselrichter-apsystems-ez1-m",
     sku: "SS-APS-EZ1M",
     name: "Wechselrichter APsystems EZ1-M",
@@ -300,7 +325,6 @@ export const seedProducts: ProductInput[] = [
     specs: { inverterW: 800, mppt: 2, connectivity: "WLAN, Bluetooth" },
     includes: ["APsystems EZ1-M"],
     price: 139,
-    compareAtPrice: 169,
     vatRate: 0,
     suitableFor: ["balkon", "flachdach", "schraegdach", "garten"],
     visual: "inverter",
@@ -312,6 +336,7 @@ export const seedProducts: ProductInput[] = [
   // ---------- Montage & Zubehör ----------
   {
     id: "p-eforu-mount-2",
+    manufacturer: { name: "E.FOR.U GmbH" },
     slug: "halterung-2-module-flachdach-garten-fassade",
     sku: "SS-MNT-2F",
     name: "Halterung für 2 Module, Flachdach / Garten / Fassade",
@@ -323,7 +348,6 @@ export const seedProducts: ProductInput[] = [
     specs: { tiltRange: "0–90°", maxLengthMm: 1200 },
     includes: ["Halterung für 2 Module", "Befestigungsmaterial"],
     price: 75.9,
-    compareAtPrice: 79.9,
     vatRate: 0,
     suitableFor: ["flachdach", "garten"],
     visual: "mount-flat",
@@ -333,6 +357,7 @@ export const seedProducts: ProductInput[] = [
   },
   {
     id: "p-anker-smart-meter",
+    manufacturer: { name: "Anker Innovations" },
     slug: "anker-solix-smarter-zaehler",
     sku: "SS-ANK-METER",
     name: "Anker SOLIX Smarter Zähler",
@@ -357,6 +382,7 @@ export const seedProducts: ProductInput[] = [
   },
   {
     id: "p-anker-smart-plug",
+    manufacturer: { name: "Anker Innovations" },
     slug: "anker-solix-smart-plug",
     sku: "SS-ANK-PLUG",
     name: "Anker SOLIX Smart Plug",
@@ -365,7 +391,7 @@ export const seedProducts: ProductInput[] = [
     shortDescription: "WLAN-Steckdose mit App-Steuerung für Anker SOLIX.",
     description: "Smarte Steckdose, die Verbraucher misst und per App schaltet. Hilft, Solarstrom gezielt zu nutzen.",
     highlights: ["WLAN", "App-Steuerung"],
-    specs: { connectivity: "WLAN", compatibleWith: "Anker SOLIX" },
+    specs: { connectivity: "WLAN", compatibleWith: "Anker SOLIX Solarbank 2 E1600 Pro / Plus" },
     includes: ["Smart Plug"],
     price: 29,
     vatRate: 19,
