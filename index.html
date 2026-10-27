@@ -157,7 +157,7 @@ section.block { padding-block: 64px; }
 .sec-head h2 { font-size: clamp(28px, 3.6vw, 40px); font-weight: 800; font-stretch: 112%; letter-spacing: -.015em; margin-top: 6px; }
 
 /* Kategorien */
-.cats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.cats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
 .cat { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 20px; text-decoration: none; color: var(--fg); display: grid; gap: 6px; transition: border-color .15s, transform .15s; }
 .cat:hover { border-color: var(--cell-line); transform: translateY(-2px); }
 .cat .art { height: 96px; display: grid; place-items: center; background: var(--surface-2); border-radius: 8px; margin-bottom: 8px; }
@@ -165,7 +165,7 @@ section.block { padding-block: 64px; }
 .cat h3 { font-size: 19px; font-weight: 750; font-stretch: 105%; }
 .cat p { margin: 0; font-size: 14px; color: var(--muted); }
 .cat .from { font-size: 14px; font-weight: 600; color: var(--fg); margin-top: 4px; }
-@media (max-width: 860px) { .cats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 700px) { .cats { grid-template-columns: 1fr; } }
 
 /* Produkte */
 .chips { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -315,7 +315,6 @@ aside.drawer.open { transform: none; }
     <nav class="main" aria-label="Hauptnavigation">
       <a href="#shop" data-cat="balkon">Balkonkraftwerke</a>
       <a href="#shop" data-cat="speicher">Speicher</a>
-      <a href="#shop" data-cat="anlage">PV-Anlagen</a>
       <a href="#shop" data-cat="zubehoer">Zubehör</a>
       <a href="#faq">Ratgeber</a>
     </nav>
@@ -336,7 +335,7 @@ aside.drawer.open { transform: none; }
     <canvas id="cells" aria-hidden="true"></canvas>
     <div class="wrap">
       <div>
-        <p class="eyebrow" style="color:var(--on-cell-muted);margin:0 0 14px">Balkonkraftwerke · Speicher · PV-Komplettsets</p>
+        <p class="eyebrow" style="color:var(--on-cell-muted);margin:0 0 14px">Balkonkraftwerke · Speicher · Zubehör</p>
         <h1>Dein Balkon kann mehr als <em>Blumen.</em></h1>
         <p class="lede">Steckerfertige Solaranlagen bis <b>800 W Einspeisung</b>, geliefert bis vor die Haustür. Anschließen an die Steckdose, im Marktstammdatenregister eintragen, fertig.</p>
         <div class="hero-ctas">
@@ -355,11 +354,10 @@ aside.drawer.open { transform: none; }
         <p class="sub">Wie viel spart ein Balkonkraftwerk bei dir?</p>
 
         <div class="field">
-          <span class="lab">Modulleistung</span>
-          <div class="seg three" role="radiogroup" aria-label="Modulleistung">
-            <input type="radio" name="wp" id="wp900" value="900" checked><label for="wp900">900<small>2 × 450 Wp</small></label>
-            <input type="radio" name="wp" id="wp1000" value="1000"><label for="wp1000">1.000<small>2 × 500 Wp</small></label>
-            <input type="radio" name="wp" id="wp2000" value="2000"><label for="wp2000">2.000<small>4 × 500 Wp</small></label>
+          <span class="lab">Set</span>
+          <div class="seg" style="grid-template-columns:1fr 1fr" role="radiogroup" aria-label="Set">
+            <input type="radio" name="set" id="setA" value="set880" checked><label for="setA">Komplettset 880 W<small>2 × 440 Wp</small></label>
+            <input type="radio" name="set" id="setB" value="set880s"><label for="setB">Mit Speicher<small>+ 1,6 kWh</small></label>
           </div>
         </div>
 
@@ -385,12 +383,6 @@ aside.drawer.open { transform: none; }
         <div class="field">
           <label for="price">Strompreis <span class="val" id="priceVal">37 ct/kWh</span></label>
           <input type="range" id="price" min="25" max="50" step="1" value="37">
-        </div>
-
-        <div class="field">
-          <label for="store" style="justify-content:flex-start;gap:10px;align-items:center;cursor:pointer">
-            <input type="checkbox" id="store" style="width:18px;height:18px;accent-color:var(--cell-2)"> Mit Speicher (2 kWh) – mehr Eigenverbrauch am Abend
-          </label>
         </div>
 
         <div class="result" aria-live="polite">
@@ -434,7 +426,7 @@ aside.drawer.open { transform: none; }
       </div>
       <div class="steps">
         <div class="step"><span class="n">Schritt 1</span><h3>Set wählen</h3><p>Nach Platz und Ausrichtung: zwei Module fürs Geländer, vier für Garten oder Flachdach.</p><span class="time">5 Min.</span></div>
-        <div class="step"><span class="n">Schritt 2</span><h3>Lieferung</h3><p>Versand direkt durch unseren Logistikpartner. Den Tracking-Link bekommst du per E-Mail.</p><span class="time">3–5 Werktage</span></div>
+        <div class="step"><span class="n">Schritt 2</span><h3>Lieferung</h3><p>Versand aus dem Partnerlager in Deutschland. Den Tracking-Link bekommst du per E-Mail.</p><span class="time">3–5 Werktage</span></div>
         <div class="step"><span class="n">Schritt 3</span><h3>Montieren &amp; einstecken</h3><p>Halterung anbringen, Module verkabeln, Wechselrichter in die Steckdose. Kein Elektriker nötig.</p><span class="time">ca. 1 Std.</span></div>
         <div class="step"><span class="n">Schritt 4</span><h3>Anmelden</h3><p>Eintrag im Marktstammdatenregister der Bundesnetzagentur. Die Meldung beim Netzbetreiber entfällt seit 2024.</p><span class="time">10 Min., online</span></div>
       </div>
@@ -444,7 +436,7 @@ aside.drawer.open { transform: none; }
   <section class="block">
     <div class="wrap perks">
       <div class="perk"><svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="30" height="20" rx="2"/><path d="M5 18h30M12 26h6"/></svg><div><b>Sicher bezahlen</b><span>Rechnung, PayPal, Kreditkarte oder Finanzierung</span></div></div>
-      <div class="perk"><svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 4l13 5v10c0 8-6 14-13 17C13 33 7 27 7 19V9z"/><path d="M14 20l4 4 8-9"/></svg><div><b>Bis zu 25 Jahre</b><span>Leistungsgarantie der Hersteller auf Module</span></div></div>
+      <div class="perk"><svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 4l13 5v10c0 8-6 14-13 17C13 33 7 27 7 19V9z"/><path d="M14 20l4 4 8-9"/></svg><div><b>Markenhersteller</b><span>Anker SOLIX, APsystems, EcoFlow und Zendure</span></div></div>
       <div class="perk"><svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 26v-6a12 12 0 0124 0v6"/><rect x="5" y="24" width="7" height="10" rx="2"/><rect x="28" y="24" width="7" height="10" rx="2"/></svg><div><b>Beratung</b><span>Mo–Fr 8–18 Uhr per Telefon und Chat</span></div></div>
       <div class="perk"><svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 14l14-8 14 8v14l-14 8-14-8z"/><path d="M6 14l14 8 14-8M20 22v14"/></svg><div><b>Sendungsverfolgung</b><span>Jede Bestellung mit Tracking-Link per E-Mail</span></div></div>
     </div>
@@ -487,10 +479,10 @@ aside.drawer.open { transform: none; }
   <div class="wrap cols">
     <div class="about">
       <a class="logo" href="#top"><svg viewBox="0 0 32 32" aria-hidden="true"><rect x="2" y="10" width="28" height="20" rx="3" fill="var(--cell-2)"/><path d="M11.3 10v20M20.6 10v20M2 20h28" stroke="var(--cell-line)" stroke-width="1.5"/><circle cx="23" cy="8" r="6" fill="var(--sun)"/></svg>Sonnenwerk</a>
-      <p>Solartechnik für Balkon, Garten und Dach. Wir verkaufen steckerfertige Sets, Speicher und Komplettanlagen an Privat- und Geschäftskunden.</p>
+      <p>Solartechnik für Balkon, Garten und Terrasse. Wir verkaufen steckerfertige Balkonkraftwerke, Stromspeicher und Zubehör.</p>
       <div class="pay"><span>Rechnung</span><span>PayPal</span><span>Visa</span><span>Mastercard</span><span>Vorkasse</span></div>
     </div>
-    <div><h4>Shop</h4><ul><li><a href="#shop">Balkonkraftwerke</a></li><li><a href="#shop">Stromspeicher</a></li><li><a href="#shop">PV-Komplettanlagen</a></li><li><a href="#shop">Zubehör</a></li></ul></div>
+    <div><h4>Shop</h4><ul><li><a href="#shop">Balkonkraftwerke</a></li><li><a href="#shop">Stromspeicher</a></li><li><a href="#shop">Zubehör</a></li></ul></div>
     <div><h4>Service</h4><ul><li><a href="#faq">Ratgeber &amp; FAQ</a></li><li><a href="#schritte">Montage</a></li><li><a href="#top">Versand &amp; Lieferung</a></li><li><a href="#top">Rückgabe</a></li></ul></div>
     <div><h4>Rechtliches</h4><ul><li><a href="#top">Impressum</a></li><li><a href="#top">AGB</a></li><li><a href="#top">Widerrufsbelehrung</a></li><li><a href="#top">Datenschutz</a></li></ul></div>
   </div>
@@ -543,6 +535,8 @@ aside.drawer.open { transform: none; }
     rail: () => `<path d="M20 40h160M20 120h160" stroke="#8A95A8" stroke-width="5" stroke-linecap="round"/><path d="M40 30v100M100 30v100M160 30v100" stroke="#8A95A8" stroke-width="3"/>` + `<rect x="58" y="34" width="22" height="16" rx="3" fill="var(--sun)"/><rect x="120" y="34" width="22" height="16" rx="3" fill="var(--sun)"/><rect x="58" y="112" width="22" height="16" rx="3" fill="var(--sun)"/><rect x="120" y="112" width="22" height="16" rx="3" fill="var(--sun)"/>`,
     flat: () => `<path d="M10 140h180" stroke="#8A95A8" stroke-width="4"/><path d="M40 140L150 66M150 66v74M95 103v37" stroke="#8A95A8" stroke-width="4" fill="none"/>` + `<g transform="rotate(-34 40 140)">${panel(40, 112, 130, 22, 10, 2)}</g>`,
     meter: () => `<rect x="60" y="22" width="80" height="116" rx="6" fill="#E9EDF3" stroke="#9AA6BC" stroke-width="2"/><rect x="72" y="36" width="56" height="22" rx="2" fill="var(--cell)"/><text x="100" y="52" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#9EF0C3">1 284,6</text><circle cx="100" cy="98" r="18" fill="#5B6577"/><circle cx="100" cy="98" r="7" fill="var(--sun)"/>`,
+    inv: () => `<rect x="50" y="30" width="100" height="100" rx="10" fill="#5B6577"/><rect x="66" y="48" width="68" height="10" rx="5" fill="#C9D1DD"/><circle cx="132" cy="112" r="5" fill="var(--good)"/><path d="M70 130v18M90 130v18M110 130v18M130 130v18" stroke="#8A95A8" stroke-width="5" stroke-linecap="round"/>`,
+    plug: () => `<rect x="62" y="30" width="76" height="100" rx="14" fill="#E9EDF3" stroke="#9AA6BC" stroke-width="2"/><circle cx="100" cy="80" r="24" fill="#C9D1DD"/><circle cx="91" cy="80" r="4" fill="#5B6577"/><circle cx="109" cy="80" r="4" fill="#5B6577"/><circle cx="100" cy="46" r="4" fill="var(--good)"/>`,
     plant: () => { let s = ""; for (let i = 0; i < 3; i++) for (let j = 0; j < 2; j++) s += panel(8 + i * 46, 14 + j * 52, 42, 48, 4, 5); return s + battery(150, 30, 44, 76, .9) + inverter(155, 120); }
   };
   const svg = (k) => `<svg viewBox="0 0 200 160" aria-hidden="true">${ART[k]()}</svg>`;
@@ -551,22 +545,26 @@ aside.drawer.open { transform: none; }
      Platzhalter: hier die Produkte, Preise und Lieferzeit aus dem eforu-Katalog eintragen. */
   const DELIVERY = "3–5 Werktagen";
   const CATS = [
-    { id: "balkon", name: "Balkonkraftwerke", desc: "Steckerfertig bis 800 W", from: 249, art: "duo" },
-    { id: "speicher", name: "Stromspeicher", desc: "Solarstrom für den Abend", from: 549, art: "store" },
-    { id: "anlage", name: "PV-Komplettanlagen", desc: "Fürs Dach, mit Speicher", from: 6490, art: "plant" },
-    { id: "zubehoer", name: "Zubehör", desc: "Halterungen, Kabel, Zähler", from: 29, art: "rail" }
+    { id: "balkon", name: "Balkonkraftwerke", desc: "Komplettsets bis 800 W", art: "duo" },
+    { id: "speicher", name: "Stromspeicher", desc: "Solarstrom für den Abend", art: "store" },
+    { id: "zubehoer", name: "Zubehör", desc: "Wechselrichter, Halterungen, Zähler", art: "flat" }
   ];
+  // Quelle: eforu.solar (Privatkunden-Preise laut Websuche, Oktober 2026). Vor dem Start prüfen.
   const P = [
-    { id: "duo900", cat: "balkon", art: "duo", name: "Balkonkraftwerk Duo 900", specs: ["2 × 450 Wp", "800 W WR", "Schuko 5 m"], price: 249, was: 329, vat0: true, badge: "-24 %" },
-    { id: "duo1000", cat: "balkon", art: "duo", name: "Balkonkraftwerk Duo 1000 bifazial", specs: ["2 × 500 Wp", "Glas-Glas", "800 W WR"], price: 299, vat0: true },
-    { id: "q2000", cat: "balkon", art: "quattro", name: "Balkonkraftwerk Quattro 2000", specs: ["4 × 500 Wp", "800 W WR", "WLAN"], price: 529, was: 599, vat0: true, badge: "-12 %" },
-    { id: "duoS", cat: "speicher", art: "duoStore", name: "Balkonkraftwerk + Speicher 2,1 kWh", specs: ["2 × 500 Wp", "2,1 kWh LiFePO₄", "App"], price: 1049, vat0: true, badge: "Neu", isNew: true },
-    { id: "s16", cat: "speicher", art: "store", name: "Speichererweiterung 1,6 kWh", specs: ["1,6 kWh", "LiFePO₄", "6.000 Zyklen"], price: 549, vat0: true },
-    { id: "plant10", cat: "anlage", art: "plant", name: "PV-Komplettanlage 10 kWp mit 10 kWh Speicher", specs: ["24 × 430 Wp", "Hybrid-WR 10 kW", "10 kWh"], price: 8490, vat0: true },
-    { id: "rail", cat: "zubehoer", art: "rail", name: "Geländerhalterung für 2 Module", specs: ["Alu", "Ø 20–60 mm", "werkzeugarm"], price: 69, vat0: true },
-    { id: "flat", cat: "zubehoer", art: "flat", name: "Flachdach-Aufständerung 30°", specs: ["1 Modul", "Alu", "Ballast-Wanne"], price: 89, vat0: true },
-    { id: "meter", cat: "zubehoer", art: "meter", name: "Smart-Meter-Lesekopf (IR)", specs: ["WLAN", "MQTT", "App"], price: 39, vat0: false }
+    { id: "set880", cat: "balkon", art: "duo", name: "Komplettset Balkonkraftwerk 880 W, bifazial Glas-Glas", specs: ["2 × 440 Wp", "Glas-Glas", "APsystems 800 W"], price: 329, vat0: true },
+    { id: "set880s", cat: "balkon", art: "duoStore", name: "Komplettset 880 W mit Anker SOLIX E1600 Speicher", specs: ["2 × 440 Wp", "Anker WR 800 W", "1,6 kWh"], price: 1209, vat0: true, badge: "Mit Speicher", isNew: true },
+    { id: "sb3", cat: "speicher", art: "store", name: "Anker SOLIX Solarbank 3 E2700 Pro inkl. Smart Meter", specs: ["2,7 kWh", "Smart Meter", "dyn. Stromtarif"], price: 1398, vat0: true },
+    { id: "sb2ac", cat: "speicher", art: "store", name: "Anker SOLIX Solarbank 2 E1600 AC inkl. Smart Meter", specs: ["1,6 kWh", "AC-Kopplung", "Smart Meter"], price: 998, vat0: true },
+    { id: "sb2pro", cat: "speicher", art: "store", name: "Anker SOLIX Solarbank 2 E1600 Pro", specs: ["1,6 kWh", "bis 9,6 kWh erweiterbar"], price: 899, vat0: true },
+    { id: "sbmax", cat: "speicher", art: "store", name: "Anker SOLIX Solarbank Max AC 7000 Wh", specs: ["7 kWh", "AC-Speicher"], price: 1799, vat0: true },
+    { id: "ecoflow", cat: "speicher", art: "store", name: "EcoFlow STREAM UltraX Speicher", specs: ["AC-Speicher", "App"], price: 1199, vat0: true },
+    { id: "zendure", cat: "speicher", art: "store", name: "Zendure SolarFlow 800 Plus", specs: ["800 W", "Einstieg"], price: 399, vat0: true },
+    { id: "ez1m", cat: "zubehoer", art: "inv", name: "Wechselrichter APsystems EZ1-M", specs: ["800 W", "2 MPPT", "WLAN + Bluetooth"], price: 139, was: 169, vat0: true, badge: "-18 %" },
+    { id: "mount", cat: "zubehoer", art: "flat", name: "Halterung für 2 Module, Flachdach / Garten / Fassade", specs: ["0–90°", "bis 1.200 mm"], price: 75.9, was: 79.9, vat0: true, badge: "-5 %" },
+    { id: "meter", cat: "zubehoer", art: "meter", name: "Anker SOLIX Smarter Zähler", specs: ["für Solarbank 2 Pro/Plus"], price: 99, vat0: false },
+    { id: "plug", cat: "zubehoer", art: "plug", name: "Anker SOLIX Smart Plug", specs: ["WLAN", "App"], price: 29, vat0: false }
   ];
+  CATS.forEach((c) => { c.from = Math.min(...P.filter((p) => p.cat === c.id).map((p) => p.price)); });
   const byId = Object.fromEntries(P.map((p) => [p.id, p]));
 
   $("#cats").innerHTML = CATS.map((c) => `
@@ -688,19 +686,17 @@ aside.drawer.open { transform: none; }
   /* ---------- Ertragsrechner ---------- */
   const SPEC_YIELD = 950; // kWh je kWp und Jahr, Mittel Deutschland
   const form = $("#calc");
-  let matchId = "duo900";
+  let matchId = "set880";
   function calc() {
-    const wp = +form.querySelector('[name="wp"]:checked').value;
+    matchId = form.querySelector('[name="set"]:checked').value;
+    const wp = 880;
     const dir = +form.querySelector('[name="dir"]:checked').value;
     const mnt = +form.querySelector('[name="mnt"]:checked').value;
     const ct = +$("#price").value;
-    const store = $("#store").checked;
-    // 800-W-Drossel kostet bei großer Modulleistung etwas Ertrag zur Mittagsspitze
-    const clip = wp > 1000 ? 0.9 : 1;
-    const kwh = Math.round(wp / 1000 * SPEC_YIELD * dir * mnt * clip);
+    const store = matchId === "set880s";
+    const kwh = Math.round(wp / 1000 * SPEC_YIELD * dir * mnt);
     const self = store ? 0.9 : 0.65;
     const save = kwh * self * ct / 100;
-    matchId = store ? "duoS" : wp === 2000 ? "q2000" : wp === 1000 ? "duo1000" : "duo900";
     const setPrice = byId[matchId].price;
     const years = save > 0 ? setPrice / save : 0;
     $("#priceVal").textContent = ct + " ct/kWh";
