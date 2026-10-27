@@ -19,7 +19,7 @@ Danach `npm run logo` ausführen, damit die SVG-Dateien neu erzeugt werden (brau
 | `public/brand/icon-app.svg`, `src/app/icon.svg`, `src/app/apple-icon.png` | App-Icon und Favicon |
 | `src/components/brand/Logo.tsx` | React-Komponenten `Logo` und `LogoIcon` mit `tone="light" | "dark"` |
 
-Schutzraum: mindestens die halbe Höhe der Bildmarke rundum. Die Sonne ist immer Premium-Grün.
+Schutzraum: mindestens die halbe Höhe der Bildmarke rundum. Die Sonne ist immer in Sonnenfarben (Verlauf #FFCB3D → #F5841F, in `brand.colors.sunTop/sunBottom`).
 
 ## Farben
 

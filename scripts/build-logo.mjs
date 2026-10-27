@@ -18,7 +18,8 @@ const out = path.join(root, "public", "brand");
 
 const INK = "#101820";
 const PAPER = "#F8FAF7";
-const LIME = "#B7F34B";
+const SUN_TOP = "#FFCB3D";
+const SUN_BOTTOM = "#F5841F";
 
 async function readBrand() {
   const src = await readFile(path.join(root, "src/config/brand.ts"), "utf8");
@@ -53,10 +54,11 @@ function textPath(font, text, x, baseline, size, tracking) {
 
 function iconGroup(panelColor, id) {
   return `<defs>
+    <linearGradient id="sungrad-${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${SUN_TOP}"/><stop offset="1" stop-color="${SUN_BOTTOM}"/></linearGradient>
     <mask id="sun-${id}" maskUnits="userSpaceOnUse"><rect width="64" height="64" fill="#fff"/><polygon points="6,55 17,29 59,29 48,55" fill="#000" stroke="#000" stroke-width="6" stroke-linejoin="round"/></mask>
     <mask id="panel-${id}" maskUnits="userSpaceOnUse"><polygon points="6,55 17,29 59,29 48,55" fill="#fff" stroke="#fff" stroke-width="1" stroke-linejoin="round"/><line x1="38" y1="27" x2="27" y2="57" stroke="#000" stroke-width="3"/><line x1="2" y1="42" x2="62" y2="42" stroke="#000" stroke-width="3"/></mask>
   </defs>
-  <circle cx="41" cy="21" r="13" fill="${LIME}" mask="url(#sun-${id})"/>
+  <circle cx="41" cy="21" r="13" fill="url(#sungrad-${id})" mask="url(#sun-${id})"/>
   <rect width="64" height="64" fill="${panelColor}" mask="url(#panel-${id})"/>`;
 }
 

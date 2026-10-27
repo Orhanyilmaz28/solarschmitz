@@ -1,11 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <defs>
+    <linearGradient id="sungrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFCB3D"/><stop offset="1" stop-color="#F5841F"/></linearGradient>
     <mask id="sun" maskUnits="userSpaceOnUse"><rect width="64" height="64" fill="#fff"/><polygon points="6,55 17,29 59,29 48,55" fill="#000" stroke="#000" stroke-width="6" stroke-linejoin="round"/></mask>
     <mask id="panel" maskUnits="userSpaceOnUse"><polygon points="6,55 17,29 59,29 48,55" fill="#fff" stroke="#fff" stroke-width="1" stroke-linejoin="round"/><line x1="38" y1="27" x2="27" y2="57" stroke="#000" stroke-width="3"/><line x1="2" y1="42" x2="62" y2="42" stroke="#000" stroke-width="3"/></mask>
   </defs>
   <rect width="64" height="64" rx="14" fill="#101820"/>
   <g transform="translate(4 3) scale(0.875)">
-    <circle cx="41" cy="21" r="13" fill="#B7F34B" mask="url(#sun)"/>
+    <circle cx="41" cy="21" r="13" fill="url(#sungrad)" mask="url(#sun)"/>
     <rect width="64" height="64" fill="#F8FAF7" mask="url(#panel)"/>
   </g>
 </svg>

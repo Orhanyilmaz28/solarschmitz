@@ -44,6 +44,9 @@ export const brand = {
     green: "#B7F34B",
     warmWhite: "#F8FAF7",
     lightGrey: "#E9EEF0",
+    /** Sonne im Logo: Verlauf von oben nach unten */
+    sunTop: "#FFCB3D",
+    sunBottom: "#F5841F",
   },
 
   /**

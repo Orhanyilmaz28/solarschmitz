@@ -12,7 +12,7 @@ interface IconProps {
 }
 
 /**
- * Bildmarke: Eine Sonne geht hinter einem geneigten Solarmodul auf.
+ * Bildmarke: Eine Sonne (in Sonnenfarben) geht hinter einem geneigten Solarmodul auf.
  * Die Fugen zwischen den Zellen und der Spalt zur Sonne sind ausgestanzt,
  * damit das Zeichen auf jedem Hintergrund sauber steht.
  * Geometrie identisch mit /public/brand/*.svg und src/app/icon.svg.
@@ -31,6 +31,10 @@ export function LogoIcon({ tone = "light", size = 40, className, title }: IconPr
       aria-label={title}
     >
       <defs>
+        <linearGradient id={`sungrad-${id}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor={brand.colors.sunTop} />
+          <stop offset="1" stopColor={brand.colors.sunBottom} />
+        </linearGradient>
         <mask id={`sun-${id}`} maskUnits="userSpaceOnUse">
           <rect width="64" height="64" fill="#fff" />
           <polygon points="6,55 17,29 59,29 48,55" fill="#000" stroke="#000" strokeWidth="6" strokeLinejoin="round" />
@@ -41,7 +45,7 @@ export function LogoIcon({ tone = "light", size = 40, className, title }: IconPr
           <line x1="2" y1="42" x2="62" y2="42" stroke="#000" strokeWidth="3" />
         </mask>
       </defs>
-      <circle cx="41" cy="21" r="13" fill="var(--color-lime, #B7F34B)" mask={`url(#sun-${id})`} />
+      <circle cx="41" cy="21" r="13" fill={`url(#sungrad-${id})`} mask={`url(#sun-${id})`} />
       <rect width="64" height="64" fill={panel} mask={`url(#panel-${id})`} />
     </svg>
   );
