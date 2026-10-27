@@ -16,8 +16,7 @@ export const brand = {
 
   domain: "sonnenwerk.de",
   contact: {
-    // TODO: E-Mail-Adresse eintragen (Pflichtangabe im Impressum)
-    email: null as string | null,
+    email: "info@sonnenwerk.de" as string | null,
     phone: "0176 42903444" as string | null,
     hours: "Mo–Fr 9–17 Uhr",
     address: { street: "Richrather Straße 69", zip: "40723", city: "Hilden", country: "Deutschland" } as null | {
